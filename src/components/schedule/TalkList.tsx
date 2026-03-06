@@ -244,7 +244,7 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
         locale: dateLocale,
       })
     : null;
-  const cfg: Record<FreshnessLevel, FreshnessDisplayConfig> = {
+  const cfg: FreshnessDisplayConfig = {
     green: {
       label: texts.talks.freshness.greenLabel,
       shortLabel: texts.talks.freshness.greenShort,

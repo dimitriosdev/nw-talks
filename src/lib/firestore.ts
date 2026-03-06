@@ -78,7 +78,10 @@ export async function getTalk(id: number): Promise<Talk | null> {
 }
 
 export async function saveTalk(talk: Talk): Promise<void> {
-  await setDoc(doc(db(), "talks", String(talk.id)), withoutUndefined(talk));
+  await setDoc(
+    doc(db(), "talks", String(talk.id)),
+    withoutUndefined(talk as unknown as Record<string, unknown>),
+  );
 }
 
 export async function deleteTalk(id: number): Promise<void> {
