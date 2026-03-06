@@ -5,12 +5,15 @@ import { TalkList } from "@/components/schedule/TalkList";
 import { Spinner } from "@/components/ui/Spinner";
 import { useState } from "react";
 import type { FreshnessLevel } from "@/types";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export default function TalksPage() {
   const [filter, setFilter] = useState<FreshnessLevel | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const { texts } = usePreferences();
 
   const { talks, loading } = useFreshTalks();
+  const regularTalks = talks.filter((talk) => talk.id < 900 || talk.id > 999);
 
   if (loading) {
     return (
@@ -20,17 +23,23 @@ export default function TalksPage() {
     );
   }
 
-  const greenCount = talks.filter((t) => t.freshnessLevel === "green").length;
-  const orangeCount = talks.filter((t) => t.freshnessLevel === "orange").length;
-  const redCount = talks.filter((t) => t.freshnessLevel === "red").length;
+  const greenCount = regularTalks.filter(
+    (t) => t.freshnessLevel === "green",
+  ).length;
+  const orangeCount = regularTalks.filter(
+    (t) => t.freshnessLevel === "orange",
+  ).length;
+  const redCount = regularTalks.filter(
+    (t) => t.freshnessLevel === "red",
+  ).length;
   const activeFilterLabel =
     filter === "green"
-      ? "Available"
+      ? texts.talks.freshness.greenLabel
       : filter === "orange"
-        ? "Not recommended"
+        ? texts.talks.freshness.orangeLabel
         : filter === "red"
-          ? "Too recent"
-          : "All talks";
+          ? texts.talks.freshness.redLabel
+          : texts.talks.allTalks;
 
   const pillBtn = (
     level: FreshnessLevel | null,
@@ -68,7 +77,7 @@ export default function TalksPage() {
         <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-start justify-between gap-3">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Talk Gallery
+            {texts.talks.title}
           </h1>
           <button
             type="button"
@@ -77,7 +86,7 @@ export default function TalksPage() {
             aria-expanded={showGuide}
             aria-controls="talk-gallery-guide"
           >
-            {showGuide ? "Hide guide" : "Show guide"}
+            {showGuide ? texts.talks.hideGuide : texts.talks.showGuide}
           </button>
         </div>
 
@@ -85,15 +94,15 @@ export default function TalksPage() {
         <div className="relative mt-5 flex flex-wrap gap-3 text-sm">
           {pillBtn(
             null,
-            "talks",
-            talks.length,
+            texts.talks.talks,
+            regularTalks.length,
             "",
             "bg-white/15",
             "bg-white/30",
           )}
           {pillBtn(
             "green",
-            "available",
+            texts.talks.available,
             greenCount,
             "bg-emerald-400",
             "bg-emerald-400/20",
@@ -101,7 +110,7 @@ export default function TalksPage() {
           )}
           {pillBtn(
             "orange",
-            "not recommended",
+            texts.talks.notRecommended,
             orangeCount,
             "bg-amber-400",
             "bg-amber-400/20",
@@ -109,7 +118,7 @@ export default function TalksPage() {
           )}
           {pillBtn(
             "red",
-            "too recent",
+            texts.talks.tooRecent,
             redCount,
             "bg-red-400",
             "bg-red-400/20",
@@ -119,7 +128,7 @@ export default function TalksPage() {
 
         <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs">
           <p className="rounded-full bg-white/10 px-2.5 py-1 text-blue-100">
-            Showing:{" "}
+            {texts.talks.showing}{" "}
             <span className="font-semibold text-white">
               {activeFilterLabel}
             </span>
@@ -131,28 +140,26 @@ export default function TalksPage() {
             id="talk-gallery-guide"
             className="relative mt-3 rounded-xl bg-black/15 p-3 text-xs text-blue-100"
           >
-            <p className="mb-2 text-blue-50">
-              Click a category to filter - click again to show all.
-            </p>
+            <p className="mb-2 text-blue-50">{texts.talks.clickGuide}</p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-blue-100">
               <span>
                 <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                12+ months - safe to present
+                {texts.talks.greenGuide}
               </span>
               <span>
                 <span className="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400" />
-                6-12 months - consider waiting
+                {texts.talks.orangeGuide}
               </span>
               <span>
                 <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-400" />
-                &lt; 6 months - admin override needed
+                {texts.talks.redGuide}
               </span>
             </div>
           </div>
         )}
       </div>
 
-      <TalkList talks={talks} filter={filter} />
+      <TalkList talks={regularTalks} filter={filter} />
     </div>
   );
 }

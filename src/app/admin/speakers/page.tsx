@@ -8,10 +8,13 @@ import {
   getScheduleEntries,
   getTalks,
 } from "@/lib/firestore";
-import type { Speaker, ScheduleEntry, Talk } from "@/types";
+import type { Speaker, ScheduleEntry } from "@/types";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
 import { format, parseISO } from "date-fns";
+import { el, enUS } from "date-fns/locale";
+import { useRouter, useSearchParams } from "next/navigation";
+import { usePreferences } from "@/hooks/usePreferences";
 
 const emptySpeaker: Omit<Speaker, "id"> = {
   firstName: "",
@@ -34,6 +37,10 @@ interface SpeakerHistory {
 }
 
 export default function AdminSpeakersPage() {
+  const { language } = usePreferences();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const requestedEditId = searchParams.get("edit");
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [talkMap, setTalkMap] = useState<Map<number, string>>(new Map());
@@ -47,6 +54,7 @@ export default function AdminSpeakersPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const addRef = useRef<HTMLInputElement>(null);
+  const deepLinkHandledRef = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,7 +83,7 @@ export default function AdminSpeakersPage() {
       list.push({
         date: e.date,
         talkId: e.talkId,
-        talkTitle: talkMap.get(e.talkId) ?? `Talk #${e.talkId}`,
+        talkTitle: talkMap.get(e.talkId) ?? `Ομιλία #${e.talkId}`,
       });
       map.set(e.speakerId, list);
     }
@@ -101,18 +109,51 @@ export default function AdminSpeakersPage() {
   }, [speakers, search]);
 
   /* ---- inline edit ---- */
-  const openEdit = (s: Speaker) => {
-    if (editId === s.id) return;
-    setAdding(false);
-    setEditId(s.id);
-    setEditData({
-      firstName: s.firstName,
-      lastName: s.lastName,
-      congregation: s.congregation,
-      phone: s.phone,
-      availableTalks: s.availableTalks,
-    });
-  };
+  const openEdit = useCallback(
+    (s: Speaker) => {
+      if (editId === s.id) return;
+      setAdding(false);
+      setEditId(s.id);
+      setEditData({
+        firstName: s.firstName,
+        lastName: s.lastName,
+        congregation: s.congregation,
+        phone: s.phone,
+        availableTalks: s.availableTalks,
+      });
+    },
+    [editId],
+  );
+
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    if (!requestedEditId || loading) return;
+
+    const target = speakers.find((s) => s.id === requestedEditId);
+    if (!target) return;
+    deepLinkHandledRef.current = true;
+
+    const timer = window.setTimeout(() => {
+      setAdding(false);
+      setEditId(target.id);
+      setEditData({
+        firstName: target.firstName,
+        lastName: target.lastName,
+        congregation: target.congregation,
+        phone: target.phone,
+        availableTalks: target.availableTalks,
+      });
+
+      const el = document.getElementById(`speaker-row-${target.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      router.replace("/admin/speakers", { scroll: false });
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [requestedEditId, loading, speakers, router]);
 
   const closeEdit = () => {
     setEditId(null);
@@ -122,12 +163,12 @@ export default function AdminSpeakersPage() {
   const saveEdit = async () => {
     if (!editId || saving) return;
     if (!editData.lastName.trim()) {
-      toast("error", "Last name is required.");
+      toast("error", "Το επώνυμο είναι υποχρεωτικό.");
       return;
     }
     setSaving(true);
     await saveSpeaker({ id: editId, ...editData } as Speaker);
-    toast("success", "Speaker updated.");
+    toast("success", "Ο ομιλητής ενημερώθηκε.");
     setSaving(false);
     closeEdit();
     load();
@@ -147,12 +188,12 @@ export default function AdminSpeakersPage() {
   const saveNew = async () => {
     if (saving) return;
     if (!newData.lastName.trim()) {
-      toast("error", "Last name is required.");
+      toast("error", "Το επώνυμο είναι υποχρεωτικό.");
       return;
     }
     setSaving(true);
     await saveSpeaker(newData as Speaker);
-    toast("success", "Speaker added.");
+    toast("success", "Ο ομιλητής προστέθηκε.");
     setSaving(false);
     closeAdd();
     load();
@@ -169,14 +210,14 @@ export default function AdminSpeakersPage() {
     if (futureRefs.length > 0) {
       toast(
         "error",
-        `Cannot delete — assigned to ${futureRefs.length} future date(s).`,
+        `Δεν μπορεί να διαγραφεί - έχει ανάθεση σε ${futureRefs.length} μελλοντική(ές) ημερομηνία(ες).`,
       );
       setSaving(false);
       setDeleting(null);
       return;
     }
     await deleteSpeaker(id);
-    toast("success", "Speaker deleted.");
+    toast("success", "Ο ομιλητής διαγράφηκε.");
     setSaving(false);
     setDeleting(null);
     if (editId === id) closeEdit();
@@ -190,6 +231,7 @@ export default function AdminSpeakersPage() {
     "group cursor-pointer rounded-xl border border-gray-200 bg-white px-4 py-3 transition hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-600";
   const editRowCls =
     "rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30";
+  const dateLocale = language === "el" ? el : enUS;
 
   /* ---- key handlers ---- */
   const handleEditKey = (e: React.KeyboardEvent) => {
@@ -214,7 +256,7 @@ export default function AdminSpeakersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Speakers{" "}
+          Ομιλητές{" "}
           <span className="text-base font-normal text-gray-400">
             {speakers.length}
           </span>
@@ -256,7 +298,7 @@ export default function AdminSpeakersPage() {
         </svg>
         <input
           type="text"
-          placeholder="Search by name, congregation, phone, talk #…"
+          placeholder="Αναζήτηση με όνομα, εκκλησία, τηλέφωνο, # ομιλίας..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
@@ -268,19 +310,19 @@ export default function AdminSpeakersPage() {
         <div className={editRowCls}>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              New Speaker
+              Νέος ομιλητής
             </span>
             <button
               onClick={closeAdd}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              Esc to cancel
+              Esc για ακύρωση
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2" onKeyDown={handleAddKey}>
             <input
               ref={addRef}
-              placeholder="Last name *"
+              placeholder="Επώνυμο *"
               value={newData.lastName}
               onChange={(e) =>
                 setNewData({ ...newData, lastName: e.target.value })
@@ -288,7 +330,7 @@ export default function AdminSpeakersPage() {
               className={inputCls}
             />
             <input
-              placeholder="First name"
+              placeholder="Όνομα"
               value={newData.firstName}
               onChange={(e) =>
                 setNewData({ ...newData, firstName: e.target.value })
@@ -296,7 +338,7 @@ export default function AdminSpeakersPage() {
               className={inputCls}
             />
             <input
-              placeholder="Congregation"
+              placeholder="Εκκλησία"
               value={newData.congregation}
               onChange={(e) =>
                 setNewData({ ...newData, congregation: e.target.value })
@@ -304,7 +346,7 @@ export default function AdminSpeakersPage() {
               className={inputCls}
             />
             <input
-              placeholder="Phone"
+              placeholder="Τηλέφωνο"
               type="tel"
               value={newData.phone}
               onChange={(e) =>
@@ -315,7 +357,7 @@ export default function AdminSpeakersPage() {
           </div>
           <div className="mt-2">
             <input
-              placeholder="Available talk IDs (e.g. 1, 5, 12, 38)"
+              placeholder="Διαθέσιμα IDs ομιλιών (π.χ. 1, 5, 12, 38)"
               value={(newData.availableTalks ?? []).join(", ")}
               onChange={(e) => {
                 const ids = e.target.value
@@ -334,7 +376,7 @@ export default function AdminSpeakersPage() {
               disabled={saving}
               className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Αποθήκευση..." : "Αποθήκευση"}
             </button>
           </div>
         </div>
@@ -343,7 +385,9 @@ export default function AdminSpeakersPage() {
       {/* Empty state */}
       {filtered.length === 0 && !adding && (
         <p className="py-12 text-center text-sm text-gray-400">
-          {search ? "No speakers match your search." : "No speakers yet."}
+          {search
+            ? "Δεν βρέθηκαν ομιλητές για την αναζήτησή σας."
+            : "Δεν υπάρχουν ομιλητές ακόμα."}
         </p>
       )}
 
@@ -354,16 +398,16 @@ export default function AdminSpeakersPage() {
 
           if (isEditing) {
             return (
-              <div key={s.id} className={editRowCls}>
+              <div id={`speaker-row-${s.id}`} key={s.id} className={editRowCls}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                    Editing
+                    Επεξεργασία
                   </span>
                   <button
                     onClick={closeEdit}
                     className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    Esc to cancel
+                    Esc για ακύρωση
                   </button>
                 </div>
                 <div
@@ -372,7 +416,7 @@ export default function AdminSpeakersPage() {
                 >
                   <input
                     autoFocus
-                    placeholder="Last name *"
+                    placeholder="Επώνυμο *"
                     value={editData.lastName}
                     onChange={(e) =>
                       setEditData({ ...editData, lastName: e.target.value })
@@ -380,7 +424,7 @@ export default function AdminSpeakersPage() {
                     className={inputCls}
                   />
                   <input
-                    placeholder="First name"
+                    placeholder="Όνομα"
                     value={editData.firstName}
                     onChange={(e) =>
                       setEditData({ ...editData, firstName: e.target.value })
@@ -388,7 +432,7 @@ export default function AdminSpeakersPage() {
                     className={inputCls}
                   />
                   <input
-                    placeholder="Congregation"
+                    placeholder="Εκκλησία"
                     value={editData.congregation}
                     onChange={(e) =>
                       setEditData({ ...editData, congregation: e.target.value })
@@ -396,7 +440,7 @@ export default function AdminSpeakersPage() {
                     className={inputCls}
                   />
                   <input
-                    placeholder="Phone"
+                    placeholder="Τηλέφωνο"
                     type="tel"
                     value={editData.phone}
                     onChange={(e) =>
@@ -407,7 +451,7 @@ export default function AdminSpeakersPage() {
                 </div>
                 <div className="mt-2">
                   <input
-                    placeholder="Available talk IDs (e.g. 1, 5, 12, 38)"
+                    placeholder="Διαθέσιμα IDs ομιλιών (π.χ. 1, 5, 12, 38)"
                     value={(editData.availableTalks ?? []).join(", ")}
                     onChange={(e) => {
                       const ids = e.target.value
@@ -425,13 +469,13 @@ export default function AdminSpeakersPage() {
                   {deleting === s.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-red-500">
-                        Delete this speaker?
+                        Διαγραφή αυτού του ομιλητή;
                       </span>
                       <button
                         onClick={() => confirmDelete(s.id)}
                         className="text-xs font-medium text-red-600 hover:text-red-700"
                       >
-                        Yes, delete
+                        Ναι, διαγραφή
                       </button>
                       <button
                         onClick={() => setDeleting(null)}
@@ -445,7 +489,7 @@ export default function AdminSpeakersPage() {
                       onClick={() => setDeleting(s.id)}
                       className="text-xs text-gray-400 hover:text-red-500"
                     >
-                      Delete speaker
+                      Διαγραφή ομιλητή
                     </button>
                   )}
                   <div className="flex items-center gap-2">
@@ -454,7 +498,7 @@ export default function AdminSpeakersPage() {
                       <>
                         <a
                           href={`tel:${phoneDigits(editData.phone)}`}
-                          title="Call"
+                          title="Κλήση"
                           className="rounded-full p-1.5 text-gray-400 transition hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400"
                         >
                           <svg
@@ -493,7 +537,7 @@ export default function AdminSpeakersPage() {
                       disabled={saving}
                       className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {saving ? "Saving…" : "Save"}
+                      {saving ? "Αποθήκευση..." : "Αποθήκευση"}
                     </button>
                   </div>
                 </div>
@@ -501,7 +545,7 @@ export default function AdminSpeakersPage() {
                 {(historyMap.get(s.id)?.length ?? 0) > 0 && (
                   <div className="mt-3 border-t border-gray-200 pt-2 dark:border-gray-700">
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                      History ({historyMap.get(s.id)!.length})
+                      Ιστορικό ({historyMap.get(s.id)!.length})
                     </p>
                     <div className="max-h-40 space-y-0.5 overflow-y-auto">
                       {historyMap.get(s.id)!.map((h, i) => (
@@ -510,7 +554,9 @@ export default function AdminSpeakersPage() {
                           className="flex items-baseline gap-2 text-[11px] text-gray-500 dark:text-gray-400"
                         >
                           <span className="flex-shrink-0 font-mono text-gray-400 dark:text-gray-500">
-                            {format(parseISO(h.date), "dd MMM yyyy")}
+                            {format(parseISO(h.date), "d MMM yyyy", {
+                              locale: dateLocale,
+                            })}
                           </span>
                           <span className="flex-shrink-0 text-gray-300 dark:text-gray-600">
                             #{h.talkId}
@@ -526,7 +572,12 @@ export default function AdminSpeakersPage() {
           }
 
           return (
-            <div key={s.id} className={rowCls} onClick={() => openEdit(s)}>
+            <div
+              id={`speaker-row-${s.id}`}
+              key={s.id}
+              className={rowCls}
+              onClick={() => openEdit(s)}
+            >
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium leading-tight">
@@ -541,13 +592,13 @@ export default function AdminSpeakersPage() {
                     {s.congregation && <span>{s.congregation}</span>}
                     {s.availableTalks?.length > 0 && (
                       <span className="text-gray-300 dark:text-gray-600">
-                        {s.availableTalks.length} talk
-                        {s.availableTalks.length !== 1 ? "s" : ""}
+                        {s.availableTalks.length} ομιλία
+                        {s.availableTalks.length !== 1 ? "ες" : ""}
                       </span>
                     )}
                     {(historyMap.get(s.id)?.length ?? 0) > 0 && (
                       <span className="text-gray-300 dark:text-gray-600">
-                        {historyMap.get(s.id)!.length} presented
+                        {historyMap.get(s.id)!.length} παρουσιάστηκαν
                       </span>
                     )}
                   </div>
@@ -560,7 +611,7 @@ export default function AdminSpeakersPage() {
                   >
                     <a
                       href={`tel:${phoneDigits(s.phone)}`}
-                      title="Call"
+                      title="Κλήση"
                       className="rounded-full p-1.5 text-gray-400 transition hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/30 dark:hover:text-green-400"
                     >
                       <svg
@@ -633,7 +684,7 @@ export default function AdminSpeakersPage() {
                         d="M9 5l7 7-7 7"
                       />
                     </svg>
-                    History ({historyMap.get(s.id)!.length})
+                    Ιστορικό ({historyMap.get(s.id)!.length})
                   </button>
                   {expandedHistory === s.id && (
                     <div className="mt-1 max-h-40 space-y-0.5 overflow-y-auto pl-4">
@@ -643,7 +694,9 @@ export default function AdminSpeakersPage() {
                           className="flex items-baseline gap-2 text-[11px] text-gray-500 dark:text-gray-400"
                         >
                           <span className="flex-shrink-0 font-mono text-gray-400 dark:text-gray-500">
-                            {format(parseISO(h.date), "dd MMM yyyy")}
+                            {format(parseISO(h.date), "d MMM yyyy", {
+                              locale: dateLocale,
+                            })}
                           </span>
                           <span className="flex-shrink-0 text-gray-300 dark:text-gray-600">
                             #{h.talkId}

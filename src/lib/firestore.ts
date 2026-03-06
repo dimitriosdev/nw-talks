@@ -25,6 +25,15 @@ import { getDatesForYear } from "./dates";
 /** Shorthand — lazy accessor so we never call Firestore at module-eval time. */
 const db = () => getFirebaseDb();
 
+/** Remove `undefined` keys before writing to Firestore. */
+function withoutUndefined<T extends Record<string, unknown>>(
+  value: T,
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => v !== undefined),
+  ) as Partial<T>;
+}
+
 // ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
@@ -48,16 +57,28 @@ const talksCol = () => collection(db(), "talks");
 
 export async function getTalks(): Promise<Talk[]> {
   const snap = await getDocs(query(talksCol(), orderBy("id")));
-  return snap.docs.map((d) => ({ id: d.data().id, title: d.data().title }));
+  return snap.docs.map((d) => {
+    const data = d.data() as Partial<Talk>;
+    return {
+      // Prefer document ID for consistency when legacy rows miss `id`.
+      id: Number(data.id ?? d.id),
+      title: String(data.title ?? ""),
+    };
+  });
 }
 
 export async function getTalk(id: number): Promise<Talk | null> {
   const snap = await getDoc(doc(db(), "talks", String(id)));
-  return snap.exists() ? (snap.data() as Talk) : null;
+  if (!snap.exists()) return null;
+  const data = snap.data() as Partial<Talk>;
+  return {
+    id: Number(data.id ?? snap.id),
+    title: String(data.title ?? ""),
+  };
 }
 
 export async function saveTalk(talk: Talk): Promise<void> {
-  await setDoc(doc(db(), "talks", String(talk.id)), talk);
+  await setDoc(doc(db(), "talks", String(talk.id)), withoutUndefined(talk));
 }
 
 export async function deleteTalk(id: number): Promise<void> {
@@ -85,25 +106,51 @@ const speakersCol = () => collection(db(), "speakers");
 
 export async function getSpeakers(): Promise<Speaker[]> {
   const snap = await getDocs(query(speakersCol(), orderBy("lastName")));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Speaker);
+  return snap.docs.map((d) => {
+    const data = d.data() as Partial<Speaker>;
+    return {
+      // Always trust Firestore document ID as the canonical identity.
+      id: d.id,
+      firstName: String(data.firstName ?? ""),
+      lastName: String(data.lastName ?? ""),
+      congregation: String(data.congregation ?? ""),
+      phone: String(data.phone ?? ""),
+      availableTalks: Array.isArray(data.availableTalks)
+        ? data.availableTalks
+        : [],
+    };
+  });
 }
 
 export async function getSpeaker(id: string): Promise<Speaker | null> {
   const snap = await getDoc(doc(db(), "speakers", id));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Speaker) : null;
+  if (!snap.exists()) return null;
+  const data = snap.data() as Partial<Speaker>;
+  return {
+    id: snap.id,
+    firstName: String(data.firstName ?? ""),
+    lastName: String(data.lastName ?? ""),
+    congregation: String(data.congregation ?? ""),
+    phone: String(data.phone ?? ""),
+    availableTalks: Array.isArray(data.availableTalks)
+      ? data.availableTalks
+      : [],
+  };
 }
 
 export async function saveSpeaker(
   speaker: Omit<Speaker, "id"> & { id?: string },
 ): Promise<string> {
   if (speaker.id) {
-    const ref = doc(db(), "speakers", speaker.id);
-    await setDoc(ref, speaker);
+    const { id, ...rest } = speaker;
+    const ref = doc(db(), "speakers", id);
+    // Merge updates so partial payloads from any admin page don't erase fields.
+    await setDoc(ref, withoutUndefined(rest), { merge: true });
     return speaker.id;
   }
   // Create with auto-ID
   const ref = doc(speakersCol());
-  await setDoc(ref, { ...speaker, id: ref.id });
+  await setDoc(ref, { ...withoutUndefined(speaker), id: ref.id });
   return ref.id;
 }
 
@@ -160,7 +207,10 @@ export async function updateScheduleEntry(
   id: string,
   data: Partial<Omit<ScheduleEntry, "id">>,
 ): Promise<void> {
-  await updateDoc(doc(db(), "schedule", id), data as DocumentData);
+  await updateDoc(
+    doc(db(), "schedule", id),
+    withoutUndefined(data as DocumentData),
+  );
 }
 
 export async function deleteScheduleEntry(id: string): Promise<void> {

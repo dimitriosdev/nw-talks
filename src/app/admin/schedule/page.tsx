@@ -6,6 +6,7 @@ import {
   updateScheduleEntry,
   createScheduleEntry,
   initializeYear,
+  getScheduleYears,
   getSpeakers,
   getTalks,
   getSettings,
@@ -24,21 +25,24 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
 import { format, parseISO } from "date-fns";
+import { el, enUS } from "date-fns/locale";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePreferences } from "@/hooks/usePreferences";
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 export default function AdminSchedulePage() {
+  const { language } = usePreferences();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [freshTalks, setFreshTalks] = useState<TalkWithFreshness[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
 
   /* --- inline edit state --- */
   const [inlineId, setInlineId] = useState<string | null>(null);
@@ -90,6 +94,7 @@ export default function AdminSchedulePage() {
   const talkInputRef = useRef<HTMLInputElement>(null);
   const talkDropdownRef = useRef<HTMLDivElement>(null);
   const deepLinkHandledRef = useRef(false);
+  const pendingDeepLinkScrollIdRef = useRef<string | null>(null);
   const yearSwipeStartXRef = useRef<number | null>(null);
 
   const requestedEditId = searchParams.get("edit");
@@ -103,12 +108,13 @@ export default function AdminSchedulePage() {
   /* ---------------------------------------------------------------- */
   const load = useCallback(async () => {
     setLoading(true);
-    const [s, sp, t, conf, sett] = await Promise.all([
+    const [s, sp, t, conf, sett, years] = await Promise.all([
       getScheduleEntries(selectedYear),
       getSpeakers(),
       getTalks(),
       getConfirmedEntries(),
       getSettings(),
+      getScheduleYears(),
     ]);
     setEntries(s);
     setSpeakers(sp);
@@ -116,6 +122,7 @@ export default function AdminSchedulePage() {
       setSelectedYear(sett.activeYear);
     setSettings(sett);
     setFreshTalks(computeFreshness(t, conf, sp));
+    setAvailableYears(years);
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, hasRequestedYear]);
@@ -130,16 +137,6 @@ export default function AdminSchedulePage() {
     }
   }, [hasRequestedYear, requestedYear, selectedYear]);
 
-  useEffect(() => {
-    const onScroll = () => {
-      setShowBackToTop(window.scrollY > 320);
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const today = new Date().toISOString().slice(0, 10);
   const currentYear = new Date().getFullYear();
 
@@ -147,9 +144,17 @@ export default function AdminSchedulePage() {
     () => [...entries].sort((a, b) => a.date.localeCompare(b.date)),
     [entries],
   );
+  const hasTodayMarker = sortedEntries.some((entry) => entry.date >= today);
 
-  // Temporary test range: show years from 2020 to activeYear + 1.
-  const earliestYear = 2020;
+  // Hide years before 2023 unless data actually starts later.
+  const earliestYear = useMemo(() => {
+    const BASE_YEAR = 2023;
+    const yearsFromData = availableYears.filter((year) => year >= BASE_YEAR);
+    if (yearsFromData.length > 0) {
+      return Math.min(...yearsFromData);
+    }
+    return BASE_YEAR;
+  }, [availableYears]);
 
   const maxAllowedYear = (settings?.activeYear ?? currentYear) + 1;
   const yearOptions = useMemo(() => {
@@ -339,10 +344,25 @@ export default function AdminSchedulePage() {
     const target = entries.find((e) => e.id === requestedEditId);
     if (!target) return;
 
+    pendingDeepLinkScrollIdRef.current = target.id;
     openInlineEdit(target);
     deepLinkHandledRef.current = true;
     router.replace("/admin/schedule", { scroll: false });
   }, [requestedEditId, loading, entries, router, openInlineEdit]);
+
+  useEffect(() => {
+    const targetId = pendingDeepLinkScrollIdRef.current;
+    if (!targetId) return;
+    if (loading) return;
+
+    const timeoutId = window.setTimeout(() => {
+      const row = document.getElementById(`schedule-entry-${targetId}`);
+      row?.scrollIntoView({ behavior: "smooth", block: "start" });
+      pendingDeepLinkScrollIdRef.current = null;
+    }, 80);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loading, entries, inlineId]);
 
   /* ---------------------------------------------------------------- */
   /*  Handlers                                                         */
@@ -354,7 +374,10 @@ export default function AdminSchedulePage() {
     setGenerating(true);
     const day = meetingDayForYear(selectedYear);
     const created = await initializeYear(selectedYear, day);
-    toast("success", `Created ${created} ${day} entries for ${selectedYear}.`);
+    toast(
+      "success",
+      `Δημιουργήθηκαν ${created} εγγραφές ${day} για το ${selectedYear}.`,
+    );
     setGenerating(false);
     load();
   };
@@ -380,7 +403,7 @@ export default function AdminSchedulePage() {
     // Create new speaker if needed
     if (creatingNewSpeaker) {
       if (!newLastName.trim()) {
-        toast("error", "Last name is required for a new speaker.");
+        toast("error", "Το επώνυμο είναι υποχρεωτικό για νέο ομιλητή.");
         return;
       }
       speakerId = await saveSpeaker({
@@ -390,7 +413,10 @@ export default function AdminSchedulePage() {
         phone: newPhone.trim(),
         availableTalks: selectedTalkId ? [selectedTalkId] : [],
       });
-      toast("success", `Speaker ${newLastName} ${newFirstName} created.`);
+      toast(
+        "success",
+        `Δημιουργήθηκε ο ομιλητής ${newLastName} ${newFirstName}.`,
+      );
     }
 
     const status: ScheduleStatus = inlineConfirmed ? "confirmed" : "open";
@@ -407,7 +433,7 @@ export default function AdminSchedulePage() {
       status,
       notes: inlineNotes,
     });
-    toast("success", "Entry updated.");
+    toast("success", "Η εγγραφή ενημερώθηκε.");
     cancelInlineEdit();
     load();
   };
@@ -421,7 +447,10 @@ export default function AdminSchedulePage() {
       customTalkTitle: "",
       speakerId: null,
     });
-    toast("success", `Emptied entry for ${entry?.date ?? "unknown"}.`);
+    toast(
+      "success",
+      `Η εγγραφή για ${entry?.date ?? "άγνωστη ημερομηνία"} καθαρίστηκε.`,
+    );
     setConfirmDeleteId(null);
     if (inlineId === id) cancelInlineEdit();
     load();
@@ -429,7 +458,7 @@ export default function AdminSchedulePage() {
 
   const handleAddEntry = async () => {
     if (!newEntryDate) {
-      toast("error", "Date is required.");
+      toast("error", "Η ημερομηνία είναι υποχρεωτική.");
       return;
     }
     await createScheduleEntry({
@@ -440,10 +469,20 @@ export default function AdminSchedulePage() {
       status: "open",
       notes: "",
     });
-    toast("success", `Added ${newEntryDate}.`);
+    toast("success", `Προστέθηκε η ημερομηνία ${newEntryDate}.`);
     setShowAddEntry(false);
     setNewEntryDate("");
     load();
+  };
+
+  const goToSpeakerEditor = (speakerId: string | null, entryId: string) => {
+    if (!speakerId) return;
+    const params = new URLSearchParams();
+    params.set("edit", speakerId);
+    params.set("from", "schedule");
+    params.set("entry", entryId);
+    params.set("year", String(selectedYear));
+    router.push(`/admin/speakers?${params.toString()}`);
   };
 
   /* ---------------------------------------------------------------- */
@@ -455,11 +494,9 @@ export default function AdminSchedulePage() {
   const selectedSpeaker = selectedSpeakerId
     ? (speakers.find((s) => s.id === selectedSpeakerId) ?? null)
     : null;
+  const dateLocale = language === "el" ? el : enUS;
   const normalizeTel = (phone: string) => phone.replace(/[^+\d]/g, "");
   const normalizeWhatsApp = (phone: string) => phone.replace(/\D/g, "");
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -475,7 +512,7 @@ export default function AdminSchedulePage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Schedule</h1>
+        <h1 className="text-2xl font-bold">Πρόγραμμα</h1>
         <button
           onClick={() => setShowAddEntry(true)}
           className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
@@ -504,8 +541,8 @@ export default function AdminSchedulePage() {
               onClick={() => canNavigateBack && setSelectedYear((y) => y - 1)}
               disabled={!canNavigateBack}
               className="rounded-md px-2 py-1 text-sm text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-800"
-              aria-label="Previous year"
-              title="Previous year"
+              aria-label="Προηγούμενο έτος"
+              title="Προηγούμενο έτος"
             >
               ←
             </button>
@@ -559,13 +596,23 @@ export default function AdminSchedulePage() {
               }
               disabled={!canNavigateForward}
               className="rounded-md px-2 py-1 text-sm text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-800"
-              aria-label="Next year"
-              title="Next year"
+              aria-label="Επόμενο έτος"
+              title="Επόμενο έτος"
             >
               →
             </button>
           </div>
         </div>
+        {hasTodayMarker && (
+          <div className="flex justify-center">
+            <a
+              href="#today-marker"
+              className="text-xs font-medium text-blue-600 underline-offset-2 transition hover:underline dark:text-blue-400"
+            >
+              Σήμερα
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Add entry */}
@@ -573,7 +620,7 @@ export default function AdminSchedulePage() {
         <div className="rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              New Date
+              Νέα ημερομηνία
             </span>
             <button
               onClick={() => {
@@ -582,7 +629,7 @@ export default function AdminSchedulePage() {
               }}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              Cancel
+              Ακύρωση
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -597,7 +644,7 @@ export default function AdminSchedulePage() {
               onClick={() => handleAddEntry()}
               className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
             >
-              Add
+              Προσθήκη
             </button>
           </div>
         </div>
@@ -607,18 +654,21 @@ export default function AdminSchedulePage() {
       {entries.length === 0 && (
         <div className="rounded-xl border-2 border-dashed border-gray-300 py-16 text-center dark:border-gray-600">
           <p className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-            No schedule for {selectedYear}
+            Δεν υπάρχει πρόγραμμα για το {selectedYear}
           </p>
           <p className="mt-1 text-sm text-gray-400">
-            Generate all <strong>{meetingDayForYear(selectedYear)}</strong>{" "}
-            dates for the year, or add individual dates above.
+            Δημιούργησε όλες τις ημερομηνίες{" "}
+            <strong>{meetingDayForYear(selectedYear)}</strong> για το έτος, ή
+            πρόσθεσε μεμονωμένες ημερομηνίες πιο πάνω.
           </p>
           <Button
             className="mt-4"
             onClick={handleGenerateSchedule}
             disabled={generating}
           >
-            {generating ? "Generating…" : `Generate ${selectedYear} Schedule`}
+            {generating
+              ? "Δημιουργία..."
+              : `Δημιουργία προγράμματος ${selectedYear}`}
           </Button>
         </div>
       )}
@@ -638,7 +688,7 @@ export default function AdminSchedulePage() {
             ? `#${talk.id} — ${talk.title}`
             : entry.customTalkTitle
               ? entry.customTalkTitle
-              : "No talk assigned";
+              : "Δεν έχει ανατεθεί ομιλία";
           const isSpecialTalk = !talk && !!entry.customTalkTitle;
 
           const isFirstFuture =
@@ -646,18 +696,25 @@ export default function AdminSchedulePage() {
             (idx === 0 || sortedEntries[idx - 1].date < today);
 
           return (
-            <div key={entry.id}>
+            <div
+              key={entry.id}
+              id={`schedule-entry-${entry.id}`}
+              className="scroll-mt-24"
+            >
               {isFirstFuture && (
-                <div className="my-4 flex items-center gap-3">
+                <div
+                  id="today-marker"
+                  className="my-4 flex scroll-mt-24 items-center gap-3"
+                >
                   <div className="h-px flex-1 bg-blue-400 dark:bg-blue-600" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                    Today
+                    Σήμερα
                   </span>
                   <div className="h-px flex-1 bg-blue-400 dark:bg-blue-600" />
                 </div>
               )}
 
-              <div className={isPast && !isEditing ? "opacity-60" : ""}>
+              <div className={isPast && !isEditing ? "opacity-85" : ""}>
                 {isEditing ? (
                   /* ============== INLINE EDIT ============== */
                   <div className="rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30">
@@ -665,42 +722,44 @@ export default function AdminSchedulePage() {
                       {/* Header: date + clear/close actions */}
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-500">
-                          {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
+                          {format(parseISO(entry.date), "EEEE, d MMMM yyyy", {
+                            locale: dateLocale,
+                          })}
                         </p>
                         <div className="flex items-center gap-2">
                           {confirmDeleteId === entry.id ? (
                             <>
                               <span className="text-xs text-red-500">
-                                Clear this entry?
+                                Να καθαριστεί αυτή η εγγραφή;
                               </span>
                               <button
                                 onClick={() => handleDeleteEntry(entry.id)}
                                 className="rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
                               >
-                                Clear now
+                                Καθαρισμός τώρα
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteId(null)}
                                 className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                               >
-                                Keep editing
+                                Συνέχεια επεξεργασίας
                               </button>
                             </>
                           ) : (
                             <button
                               onClick={() => setConfirmDeleteId(entry.id)}
                               className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                              title="Clear speaker, talk and notes"
+                              title="Καθαρισμός ομιλητή, ομιλίας και σημειώσεων"
                             >
-                              Clear entry
+                              Καθαρισμός εγγραφής
                             </button>
                           )}
                           <button
                             onClick={cancelInlineEdit}
                             className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                            title="Close editor"
+                            title="Κλείσιμο επεξεργασίας"
                           >
-                            Close
+                            Κλείσιμο
                           </button>
                         </div>
                       </div>
@@ -708,14 +767,14 @@ export default function AdminSchedulePage() {
                       {/* Speaker — unified autocomplete */}
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-500">
-                          Speaker
+                          Ομιλητής
                         </label>
                         {!creatingNewSpeaker ? (
                           <div className="relative">
                             <input
                               ref={speakerInputRef}
                               type="text"
-                              placeholder="Type to search speakers…"
+                              placeholder="Πληκτρολόγησε για αναζήτηση ομιλητών..."
                               value={speakerQuery}
                               onChange={(e) => {
                                 setSpeakerQuery(e.target.value);
@@ -734,7 +793,7 @@ export default function AdminSchedulePage() {
                               <button
                                 onClick={clearSpeaker}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                title="Clear speaker"
+                                title="Καθαρισμός ομιλητή"
                               >
                                 ×
                               </button>
@@ -788,8 +847,8 @@ export default function AdminSchedulePage() {
                                     />
                                   </svg>
                                   {speakerQuery.trim()
-                                    ? `Add "${speakerQuery.trim()}" as new speaker`
-                                    : "Add new speaker"}
+                                    ? `Προσθήκη του "${speakerQuery.trim()}" ως νέου ομιλητή`
+                                    : "Προσθήκη νέου ομιλητή"}
                                 </button>
                               </div>
                             )}
@@ -799,7 +858,7 @@ export default function AdminSchedulePage() {
                           <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                                New Speaker
+                                Νέος ομιλητής
                               </span>
                               <button
                                 onClick={() => {
@@ -808,19 +867,19 @@ export default function AdminSchedulePage() {
                                 }}
                                 className="text-xs text-gray-400 hover:text-gray-600"
                               >
-                                Cancel
+                                Ακύρωση
                               </button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <input
-                                placeholder="Last name *"
+                                placeholder="Επώνυμο *"
                                 value={newLastName}
                                 onChange={(e) => setNewLastName(e.target.value)}
                                 autoFocus
                                 className={inputCls}
                               />
                               <input
-                                placeholder="First name"
+                                placeholder="Όνομα"
                                 value={newFirstName}
                                 onChange={(e) =>
                                   setNewFirstName(e.target.value)
@@ -828,7 +887,7 @@ export default function AdminSchedulePage() {
                                 className={inputCls}
                               />
                               <input
-                                placeholder="Congregation"
+                                placeholder="Εκκλησία"
                                 value={newCongregation}
                                 onChange={(e) =>
                                   setNewCongregation(e.target.value)
@@ -836,7 +895,7 @@ export default function AdminSchedulePage() {
                                 className={inputCls}
                               />
                               <input
-                                placeholder="Phone"
+                                placeholder="Τηλέφωνο"
                                 value={newPhone}
                                 onChange={(e) => setNewPhone(e.target.value)}
                                 className={inputCls}
@@ -848,15 +907,27 @@ export default function AdminSchedulePage() {
                         {selectedSpeaker && !creatingNewSpeaker && (
                           <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                             <span>
-                              Phone: {selectedSpeaker.phone || "Not available"}
+                              Τηλέφωνο:{" "}
+                              {selectedSpeaker.phone || "Μη διαθέσιμο"}
                             </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                goToSpeakerEditor(selectedSpeaker.id, entry.id)
+                              }
+                              className="inline-flex items-center rounded-full border border-gray-300 px-2 py-0.5 text-[11px] font-medium text-gray-600 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                              title="Άνοιγμα επεξεργασίας προφίλ ομιλητή"
+                            >
+                              Επεξεργασία στοιχείων
+                            </button>
 
                             {normalizeTel(selectedSpeaker.phone) && (
                               <a
                                 href={`tel:${normalizeTel(selectedSpeaker.phone)}`}
                                 className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700"
-                                aria-label="Call speaker"
-                                title="Call"
+                                aria-label="Κλήση ομιλητή"
+                                title="Κλήση"
                               >
                                 <svg
                                   className="h-3.5 w-3.5"
@@ -879,7 +950,7 @@ export default function AdminSchedulePage() {
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white transition hover:bg-green-700"
-                                aria-label="Message speaker on WhatsApp"
+                                aria-label="Μήνυμα σε ομιλητή στο WhatsApp"
                                 title="WhatsApp"
                               >
                                 <svg
@@ -899,13 +970,13 @@ export default function AdminSchedulePage() {
                       {/* Talk — unified autocomplete + custom title */}
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-500">
-                          Talk
+                          Ομιλία
                         </label>
                         <div className="relative">
                           <input
                             ref={talkInputRef}
                             type="text"
-                            placeholder="Search talks or type a special talk title…"
+                            placeholder="Αναζήτηση ομιλιών ή πληκτρολόγηση τίτλου ειδικής ομιλίας..."
                             value={talkQuery}
                             onChange={(e) => {
                               setTalkQuery(e.target.value);
@@ -932,7 +1003,7 @@ export default function AdminSchedulePage() {
                             <button
                               onClick={clearTalk}
                               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                              title="Clear talk"
+                              title="Καθαρισμός ομιλίας"
                             >
                               ×
                             </button>
@@ -967,7 +1038,7 @@ export default function AdminSchedulePage() {
                               {talkSuggestions.length === 0 &&
                                 talkQuery.trim() && (
                                   <div className="px-3 py-2 text-sm text-gray-400">
-                                    No matching talks.
+                                    Δεν βρέθηκαν αντίστοιχες ομιλίες.
                                   </div>
                                 )}
                               {/* Use as special talk option */}
@@ -994,8 +1065,8 @@ export default function AdminSchedulePage() {
                                       d="M12 4v16m8-8H4"
                                     />
                                   </svg>
-                                  Use &ldquo;{talkQuery.trim()}&rdquo; as
-                                  special talk
+                                  Χρήση του &ldquo;{talkQuery.trim()}&rdquo; ως
+                                  ειδική ομιλία
                                 </button>
                               )}
                             </div>
@@ -1004,12 +1075,12 @@ export default function AdminSchedulePage() {
                         {/* Indicator for what's selected */}
                         {selectedTalkId && (
                           <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-                            Standard talk selected
+                            Επιλέχθηκε κανονική ομιλία
                           </p>
                         )}
                         {!selectedTalkId && customTalkTitle && (
                           <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
-                            ✦ Special talk / event
+                            ✦ Ειδική ομιλία / εκδήλωση
                           </p>
                         )}
                       </div>
@@ -1043,8 +1114,8 @@ export default function AdminSchedulePage() {
                           }`}
                         >
                           {inlineConfirmed
-                            ? "✓ Confirmed"
-                            : "Not yet confirmed"}
+                            ? "✓ Επιβεβαιωμένο"
+                            : "Δεν έχει επιβεβαιωθεί"}
                         </span>
                       </div>
 
@@ -1054,7 +1125,7 @@ export default function AdminSchedulePage() {
                           type="text"
                           value={inlineNotes}
                           onChange={(e) => setInlineNotes(e.target.value)}
-                          placeholder="Notes (optional)…"
+                          placeholder="Σημειώσεις (προαιρετικά)..."
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleInlineSave();
                             if (e.key === "Escape") cancelInlineEdit();
@@ -1069,7 +1140,7 @@ export default function AdminSchedulePage() {
                           onClick={() => handleInlineSave()}
                           className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
                         >
-                          Save
+                          Αποθήκευση
                         </button>
                       </div>
                     </div>
@@ -1081,21 +1152,25 @@ export default function AdminSchedulePage() {
                     className={`group rounded-xl border bg-white px-4 py-3 transition dark:bg-gray-900 ${
                       isCancelled
                         ? "cursor-pointer border-red-200 bg-red-50/40 hover:border-red-300 hover:shadow-sm dark:border-red-900 dark:bg-red-950/20 dark:hover:border-red-700"
-                        : "cursor-pointer border-gray-200 hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:hover:border-blue-600"
+                        : isFirstFuture
+                          ? "cursor-pointer border-blue-400 bg-blue-50 ring-2 ring-blue-200 hover:border-blue-500 hover:shadow-sm dark:border-blue-600 dark:bg-blue-950 dark:ring-blue-800 dark:hover:border-blue-500"
+                          : "cursor-pointer border-gray-200 hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:hover:border-blue-600"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <p className="text-sm text-gray-500">
-                          {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
+                          {format(parseISO(entry.date), "EEEE, d MMMM yyyy", {
+                            locale: dateLocale,
+                          })}
                         </p>
                         {isCancelled ? (
                           <>
                             <p className="text-sm font-medium text-red-400 line-through">
-                              {entry.notes || "Cancelled"}
+                              {entry.notes || "Ακυρωμένο"}
                             </p>
                             <p className="text-xs text-red-500/80">
-                              Click to re-enter this date
+                              Πάτησε για επανεισαγωγή αυτής της ημερομηνίας
                             </p>
                           </>
                         ) : (
@@ -1104,9 +1179,9 @@ export default function AdminSchedulePage() {
                               {isSpecialTalk && (
                                 <span
                                   className="mr-1.5 inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-600 dark:bg-purple-900/40 dark:text-purple-400"
-                                  title="Special talk / event"
+                                  title="Ειδική ομιλία / εκδήλωση"
                                 >
-                                  Special
+                                  Ειδική
                                 </span>
                               )}
                               {displayTitle}
@@ -1114,7 +1189,7 @@ export default function AdminSchedulePage() {
                             <p className="text-sm text-gray-600 dark:text-gray-400">
                               {speaker
                                 ? `${speaker.lastName} ${speaker.firstName} (${speaker.congregation})`
-                                : "No speaker assigned"}
+                                : "Δεν έχει ανατεθεί ομιλητής"}
                             </p>
                             {entry.notes && (
                               <p className="text-xs italic text-gray-400">
@@ -1134,23 +1209,23 @@ export default function AdminSchedulePage() {
                           <button
                             onClick={() => openInlineEdit(entry)}
                             className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60"
-                            title="Re-enter this date"
+                            title="Επανεισαγωγή αυτής της ημερομηνίας"
                           >
-                            ↺ Re-enter
+                            ↺ Επανεισαγωγή
                           </button>
                         ) : isConfirmed ? (
                           <span
                             className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
-                            title="Confirmed"
+                            title="Επιβεβαιωμένο"
                           >
-                            ✓ Confirmed
+                            ✓ Επιβεβαιωμένο
                           </span>
                         ) : (
                           <span
                             className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-400 dark:bg-gray-800"
-                            title="Open"
+                            title="Ανοιχτό"
                           >
-                            ○ Open
+                            ○ Ανοιχτό
                           </span>
                         )}
                       </div>
@@ -1172,23 +1247,24 @@ export default function AdminSchedulePage() {
                 ⚠️
               </span>
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                Talk presented too recently
+                Η ομιλία παρουσιάστηκε πολύ πρόσφατα
               </h2>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               <strong>#{pendingRedOverride.talkId}</strong> &ldquo;
-              {pendingRedOverride.talkTitle}&rdquo; was presented less than 6
-              months ago. It is not recommended to schedule it again so soon.
+              {pendingRedOverride.talkTitle}&rdquo; παρουσιάστηκε πριν από
+              λιγότερο από 6 μήνες. Δεν προτείνεται να προγραμματιστεί ξανά τόσο
+              σύντομα.
             </p>
             <p className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
-              Are you sure you want to override this rule?
+              Είσαι σίγουρος/η ότι θέλεις να παρακάμψεις αυτόν τον κανόνα;
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setPendingRedOverride(null)}
               >
-                Cancel
+                Ακύρωση
               </Button>
               <Button
                 variant="danger"
@@ -1202,23 +1278,11 @@ export default function AdminSchedulePage() {
                   }
                 }}
               >
-                Override &amp; Save
+                Παράκαμψη &amp; Αποθήκευση
               </Button>
             </div>
           </div>
         </div>
-      )}
-
-      {showBackToTop && (
-        <button
-          type="button"
-          onClick={scrollToTop}
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-blue-700"
-          aria-label="Back to top"
-          title="Back to top"
-        >
-          ↑
-        </button>
       )}
     </div>
   );

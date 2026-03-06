@@ -1,0 +1,611 @@
+[
+  {
+    "firstName": "Αβραάμ",
+    "lastName": "Ντεμίρ",
+    "congregation": "Karlsruhe",
+    "phone": "+4917623931604",
+    "availableTalks": [22, 62, 64, 69, 77]
+  },
+  {
+    "firstName": "Άγγελος",
+    "lastName": "Καπανδέλης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [122]
+  },
+  {
+    "firstName": "Άλεξ",
+    "lastName": "Φραντζής",
+    "congregation": "Zürich",
+    "phone": "+41799125995",
+    "availableTalks": [139, 174, 183]
+  },
+  {
+    "firstName": "Αλέκος",
+    "lastName": "Τσάνταλης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [53, 67]
+  },
+  {
+    "firstName": "Ανδρέας",
+    "lastName": "Φραντζής",
+    "congregation": "Zürich",
+    "phone": "+41788790069",
+    "availableTalks": [18, 19, 32, 72, 77, 112]
+  },
+  {
+    "firstName": "Άντυ",
+    "lastName": "Λαουράσι",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [76]
+  },
+  {
+    "firstName": "Αντώνης",
+    "lastName": "Κόζαρης",
+    "congregation": "Stuttgart",
+    "phone": "+4917656848569",
+    "availableTalks": [7, 22, 24, 66, 177]
+  },
+  {
+    "firstName": "Απόστολος",
+    "lastName": "Βραβοσινός",
+    "congregation": "Stuttgart Nord",
+    "phone": "+4915773801984",
+    "availableTalks": [29, 81]
+  },
+  {
+    "firstName": "Αργύρης",
+    "lastName": "Κόκκαλης",
+    "congregation": "Zürich",
+    "phone": "+41767025436",
+    "availableTalks": [14, 74, 162, 169, 177, 192]
+  },
+  {
+    "firstName": "Αριστείδης",
+    "lastName": "Παπαδόπουλος",
+    "congregation": "Reutlingen",
+    "phone": "+491749716844",
+    "availableTalks": [41]
+  },
+  {
+    "firstName": "Βαγγέλης",
+    "lastName": "Ρίζος",
+    "congregation": "Mannheim",
+    "phone": "+491717536847",
+    "availableTalks": [62, 88, 180]
+  },
+  {
+    "firstName": "Βασίλης",
+    "lastName": "Κλουπώδης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [17, 100]
+  },
+  {
+    "firstName": "Βασίλης",
+    "lastName": "Νάκας",
+    "congregation": "Unknown",
+    "phone": "+306975915378",
+    "availableTalks": [24, 122, 166, 193]
+  },
+  {
+    "firstName": "Βασίλης",
+    "lastName": "Σταφυλάς",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [113]
+  },
+  {
+    "firstName": "Βασίλης",
+    "lastName": "Στεφανόπουλος",
+    "congregation": "Stuttgart",
+    "phone": "+4917647078327",
+    "availableTalks": [67]
+  },
+  {
+    "firstName": "Βασίλης",
+    "lastName": "Τζιμόπουλος",
+    "congregation": "Besigheim",
+    "phone": "+4915752591599",
+    "availableTalks": [48, 180]
+  },
+  {
+    "firstName": "Γαλάτης",
+    "lastName": "Κωστελίδης",
+    "congregation": "Böblingen",
+    "phone": "+491799207387",
+    "availableTalks": [125]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Βλάσης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [113]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Καραγιάννης",
+    "congregation": "Mannheim",
+    "phone": "+491608671623",
+    "availableTalks": [15, 37, 107, 189, 190]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Κοτζαπάσης",
+    "congregation": "Besigheim",
+    "phone": "Unknown",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Μπακάρης",
+    "congregation": "Sindelfingen",
+    "phone": "+491633633657",
+    "availableTalks": [26, 144, 178]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Μπάμπαλος",
+    "congregation": "Böblingen",
+    "phone": "+4915754283763",
+    "availableTalks": [40, 162]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Παρλάτζας",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Παρουτσής",
+    "congregation": "Böblingen",
+    "phone": "+4917638568878",
+    "availableTalks": [179]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Σιώμος",
+    "congregation": "Weinstadt",
+    "phone": "+491729591801",
+    "availableTalks": [6]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Χανιώτης",
+    "congregation": "Mannheim",
+    "phone": "+491737643378",
+    "availableTalks": [45, 113, 153, 159, 187]
+  },
+  {
+    "firstName": "Γιώργος",
+    "lastName": "Ψαλτόπουλος",
+    "congregation": "Stuttgart Nord",
+    "phone": "+4917642779222",
+    "availableTalks": [46, 115]
+  },
+  {
+    "firstName": "Δαβίδ",
+    "lastName": "Αγγελιδάκης",
+    "congregation": "Backnang",
+    "phone": "+491715300952",
+    "availableTalks": [23, 180]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Κατσαβρίας",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [11]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Κουτσογιάννης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [158]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Μετόζης",
+    "congregation": "Zürich",
+    "phone": "+41763433532",
+    "availableTalks": [7, 54, 64, 68, 85, 110, 174, 187, 190]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Πένος",
+    "congregation": "Zürich",
+    "phone": "+41763236922",
+    "availableTalks": [8, 27, 32, 34, 75, 138, 169]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Σιώτας",
+    "congregation": "Besigheim",
+    "phone": "+4917642092011",
+    "availableTalks": [60]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Σταφυλάς",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [188]
+  },
+  {
+    "firstName": "Δημήτρης",
+    "lastName": "Φρίκης",
+    "congregation": "Besigheim",
+    "phone": "+491799091705",
+    "availableTalks": [41, 67]
+  },
+  {
+    "firstName": "Ευγένης",
+    "lastName": "Τζίφρης",
+    "congregation": "Besigheim",
+    "phone": "+491786613208",
+    "availableTalks": [80, 88]
+  },
+  {
+    "firstName": "Ευγένιος",
+    "lastName": "Ντογαντζής",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [8, 118]
+  },
+  {
+    "firstName": "Ευστράτιος",
+    "lastName": "Αρτζόγλου",
+    "congregation": "Weinstadt",
+    "phone": "+491629070786",
+    "availableTalks": [182]
+  },
+  {
+    "firstName": "Θωμάς",
+    "lastName": "Κλουπώδης",
+    "congregation": "Zürich",
+    "phone": "+41786258270",
+    "availableTalks": [17, 67, 100, 119, 157]
+  },
+  {
+    "firstName": "Ιωάννης",
+    "lastName": "Κωνσταντάκης",
+    "congregation": "Weinstadt",
+    "phone": "+491784626647",
+    "availableTalks": [24, 186]
+  },
+  {
+    "firstName": "Κυριάκος",
+    "lastName": "Λαγγούσης",
+    "congregation": "Mannheim",
+    "phone": "+491722048872",
+    "availableTalks": [7, 10, 76, 98]
+  },
+  {
+    "firstName": "Κωνσταντίνος",
+    "lastName": "Μπαζδάνης",
+    "congregation": "Herrenberg",
+    "phone": "+491727656576",
+    "availableTalks": [54, 170]
+  },
+  {
+    "firstName": "Κώστας",
+    "lastName": "Κυριαζίδης",
+    "congregation": "Backnang",
+    "phone": "+49719184396",
+    "availableTalks": [57, 185]
+  },
+  {
+    "firstName": "Μαρσέλ",
+    "lastName": "Βίλλας",
+    "congregation": "Böblingen",
+    "phone": "+491629260609",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Ματθαίος",
+    "lastName": "Τσουβαλλάς",
+    "congregation": "Besigheim",
+    "phone": "+491749859995",
+    "availableTalks": [49, 182, 193]
+  },
+  {
+    "firstName": "Μιχάλης",
+    "lastName": "Βρακάς",
+    "congregation": "Besigheim",
+    "phone": "+491715738403",
+    "availableTalks": [16, 17, 53, 185, 187]
+  },
+  {
+    "firstName": "Μιχάλης",
+    "lastName": "Καμπούρης",
+    "congregation": "Villingen",
+    "phone": "+4917643548334",
+    "availableTalks": [65, 67]
+  },
+  {
+    "firstName": "Μιχάλης",
+    "lastName": "Τατσάκης",
+    "congregation": "Weinstadt",
+    "phone": "+4917332001818",
+    "availableTalks": [19, 175, 178, 188, 194]
+  },
+  {
+    "firstName": "Νίκος",
+    "lastName": "Αλμπανίδης",
+    "congregation": "Karlsruhe",
+    "phone": "+491714719364",
+    "availableTalks": [55, 72, 79, 113, 137]
+  },
+  {
+    "firstName": "Νίκος",
+    "lastName": "Βιζέλης",
+    "congregation": "Besigheim",
+    "phone": "+4917680557508",
+    "availableTalks": [7, 66, 70, 144]
+  },
+  {
+    "firstName": "Νίκος",
+    "lastName": "Ευσταθίου",
+    "congregation": "Weinstadt",
+    "phone": "+4916096969107",
+    "availableTalks": [55]
+  },
+  {
+    "firstName": "Νικόλαος",
+    "lastName": "Κωνσταντινίδης",
+    "congregation": "Sindelfingen",
+    "phone": "+491774407290",
+    "availableTalks": [2, 9, 21, 26, 38]
+  },
+  {
+    "firstName": "Νίκος",
+    "lastName": "Μπακλατζής",
+    "congregation": "Stuttgart Nord",
+    "phone": "+4917654030611",
+    "availableTalks": [31, 59, 76, 116, 117]
+  },
+  {
+    "firstName": "Νικόλαος",
+    "lastName": "Πεννολίδης",
+    "congregation": "Böblingen",
+    "phone": "+4915734864630",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Νίκος",
+    "lastName": "Τζούνας",
+    "congregation": "Stuttgart Nord",
+    "phone": "+491727411254",
+    "availableTalks": [7, 72, 121]
+  },
+  {
+    "firstName": "Παναγιώτης",
+    "lastName": "Αντωνιάδης",
+    "congregation": "Zürich",
+    "phone": "+41784024824",
+    "availableTalks": [72, 98, 107, 116, 133, 190]
+  },
+  {
+    "firstName": "Παναγιώτης",
+    "lastName": "Βλαχάκης",
+    "congregation": "Böblingen",
+    "phone": "+4915208524159",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Παναγιώτης",
+    "lastName": "Γρηγοριάδης",
+    "congregation": "Stuttgart Süd",
+    "phone": "+4916097746427",
+    "availableTalks": [53, 76]
+  },
+  {
+    "firstName": "Παναγιώτης",
+    "lastName": "Δημόπουλος",
+    "congregation": "Stuttgart Nord",
+    "phone": "+4917657940509",
+    "availableTalks": [51, 72, 160]
+  },
+  {
+    "firstName": "Παναγιώτης",
+    "lastName": "Πεπόνης",
+    "congregation": "Mannheim",
+    "phone": "+4915254517805",
+    "availableTalks": [18, 44]
+  },
+  {
+    "firstName": "Παντελής",
+    "lastName": "Παππάς",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [143]
+  },
+  {
+    "firstName": "Παύλος",
+    "lastName": "Λεωνίδης",
+    "congregation": "Stuttgart Nord",
+    "phone": "+4915127076341",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Παύλος",
+    "lastName": "Μιχαηλίδης",
+    "congregation": "Backnang",
+    "phone": "+4971911879517",
+    "availableTalks": [10]
+  },
+  {
+    "firstName": "Παύλος",
+    "lastName": "Παπαδάκης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [120]
+  },
+  {
+    "firstName": "Παύλος",
+    "lastName": "Τιμμ",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": []
+  },
+  {
+    "firstName": "Πέτρος",
+    "lastName": "Κοκκίνης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [169]
+  },
+  {
+    "firstName": "Πέτρος",
+    "lastName": "Κοτανίδης",
+    "congregation": "Mannheim",
+    "phone": "+491788485837",
+    "availableTalks": [74, 180, 187]
+  },
+  {
+    "firstName": "Πέτρος",
+    "lastName": "Κωνσταντάκης",
+    "congregation": "Stuttgart Nord",
+    "phone": "+491736635642",
+    "availableTalks": [10]
+  },
+  {
+    "firstName": "Πέτρος",
+    "lastName": "Παρουτσής",
+    "congregation": "Böblingen",
+    "phone": "+491741669702",
+    "availableTalks": [189]
+  },
+  {
+    "firstName": "Στέλιος",
+    "lastName": "Λυκίδης",
+    "congregation": "Herrenberg",
+    "phone": "+4915758497996",
+    "availableTalks": [24, 65, 184]
+  },
+  {
+    "firstName": "Στέργιος",
+    "lastName": "Σωτηρόπουλος",
+    "congregation": "Zürich",
+    "phone": "+41793358822",
+    "availableTalks": [55, 64, 104, 117, 190]
+  },
+  {
+    "firstName": "Στέφανος",
+    "lastName": "Αδάμος",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [75]
+  },
+  {
+    "firstName": "Στέφανος",
+    "lastName": "Αποστολόπουλος",
+    "congregation": "Stuttgart Süd",
+    "phone": "+491734074424",
+    "availableTalks": [1, 56, 71]
+  },
+  {
+    "firstName": "Στέφανος",
+    "lastName": "Ζάχος",
+    "congregation": "Stuttgart Süd",
+    "phone": "+4917681093564",
+    "availableTalks": [44, 72]
+  },
+  {
+    "firstName": "Στέφανος",
+    "lastName": "Τζιβανάκης",
+    "congregation": "Weinstadt",
+    "phone": "+491633041059",
+    "availableTalks": [26, 118]
+  },
+  {
+    "firstName": "Στρατός",
+    "lastName": "Ζομπόνος",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [102]
+  },
+  {
+    "firstName": "Τιμόθεος",
+    "lastName": "Βραβοσινός",
+    "congregation": "Stuttgart Nord",
+    "phone": "+491727218433",
+    "availableTalks": [61, 101]
+  },
+  {
+    "firstName": "Τιμόθεος",
+    "lastName": "Τσιγκαρίδας",
+    "congregation": "Zürich",
+    "phone": "+41765612499",
+    "availableTalks": [58, 169]
+  },
+  {
+    "firstName": "Τόνης",
+    "lastName": "Παρουτσής",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [161]
+  },
+  {
+    "firstName": "Φίλιππος",
+    "lastName": "Βρακάς",
+    "congregation": "Besigheim",
+    "phone": "+4917655520321",
+    "availableTalks": [31, 72, 75]
+  },
+  {
+    "firstName": "Φώτης",
+    "lastName": "Βρακάς",
+    "congregation": "Besigheim",
+    "phone": "+4917655521078",
+    "availableTalks": [14, 23, 121]
+  },
+  {
+    "firstName": "Φώτης",
+    "lastName": "Μίχος",
+    "congregation": "Besigheim",
+    "phone": "+491776312155",
+    "availableTalks": [89]
+  },
+  {
+    "firstName": "Φώτης",
+    "lastName": "Σουλτάνης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [80]
+  },
+  {
+    "firstName": "Χρήστος",
+    "lastName": "Αϊβάτης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [183]
+  },
+  {
+    "firstName": "Χρήστος",
+    "lastName": "Γκανταΐδης",
+    "congregation": "Besigheim",
+    "phone": "+491776312155",
+    "availableTalks": [8, 179]
+  },
+  {
+    "firstName": "Χρήστος",
+    "lastName": "Δημάκης",
+    "congregation": "Reutlingen",
+    "phone": "+491786878716",
+    "availableTalks": [53, 187]
+  },
+  {
+    "firstName": "Χρήστος",
+    "lastName": "Σταθάκης",
+    "congregation": "Unknown",
+    "phone": "Unknown",
+    "availableTalks": [84]
+  }
+]

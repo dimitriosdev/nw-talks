@@ -13,7 +13,7 @@ export default function AdminTalksPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [adding, setAdding] = useState(false);
-  const [newId, setNewId] = useState(0);
+  const [newIdInput, setNewIdInput] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -60,12 +60,12 @@ export default function AdminTalksPage() {
   const saveEdit = async () => {
     if (editId === null || saving) return;
     if (!editTitle.trim()) {
-      toast("error", "Title is required.");
+      toast("error", "Ο τίτλος είναι υποχρεωτικός.");
       return;
     }
     setSaving(true);
     await saveTalk({ id: editId, title: editTitle.trim() });
-    toast("success", "Talk updated.");
+    toast("success", "Η ομιλία ενημερώθηκε.");
     setSaving(false);
     closeEdit();
     load();
@@ -75,7 +75,7 @@ export default function AdminTalksPage() {
   const openAdd = () => {
     setEditId(null);
     setDeleting(null);
-    setNewId((talks.at(-1)?.id ?? 0) + 1);
+    setNewIdInput("");
     setNewTitle("");
     setAdding(true);
     setTimeout(() => addRef.current?.focus(), 50);
@@ -83,19 +83,59 @@ export default function AdminTalksPage() {
 
   const closeAdd = () => setAdding(false);
 
+  const normalizeTitle = (title: string) =>
+    title.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const getNextAutoEventTalkId = () => {
+    const used = new Set(talks.map((t) => t.id));
+    for (let next = 999; next >= 1; next -= 1) {
+      if (!used.has(next)) return next;
+    }
+    return null;
+  };
+
   const saveNew = async () => {
     if (saving) return;
     if (!newTitle.trim()) {
-      toast("error", "Title is required.");
+      toast("error", "Ο τίτλος είναι υποχρεωτικός.");
       return;
     }
-    if (talks.some((t) => t.id === newId)) {
-      toast("error", `Talk #${newId} already exists.`);
+
+    const trimmedTitle = newTitle.trim();
+    const normalizedNewTitle = normalizeTitle(trimmedTitle);
+
+    if (talks.some((t) => normalizeTitle(t.title) === normalizedNewTitle)) {
+      toast("error", `Ο τίτλος \"${trimmedTitle}\" υπάρχει ήδη.`);
       return;
     }
+
+    const trimmedId = newIdInput.trim();
+    let resolvedId: number;
+
+    if (!trimmedId) {
+      const autoId = getNextAutoEventTalkId();
+      if (autoId === null) {
+        toast("error", "Δεν υπάρχουν διαθέσιμα αυτόματα IDs (999 έως 1).");
+        return;
+      }
+      resolvedId = autoId;
+    } else {
+      const parsedId = Number(trimmedId);
+      if (!Number.isInteger(parsedId) || parsedId <= 0) {
+        toast("error", "Το ID ομιλίας πρέπει να είναι θετικός ακέραιος.");
+        return;
+      }
+      resolvedId = parsedId;
+    }
+
+    if (talks.some((t) => t.id === resolvedId)) {
+      toast("error", `Η ομιλία #${resolvedId} υπάρχει ήδη.`);
+      return;
+    }
+
     setSaving(true);
-    await saveTalk({ id: newId, title: newTitle.trim() });
-    toast("success", "Talk added.");
+    await saveTalk({ id: resolvedId, title: trimmedTitle });
+    toast("success", `Η ομιλία #${resolvedId} προστέθηκε.`);
     setSaving(false);
     closeAdd();
     load();
@@ -106,7 +146,7 @@ export default function AdminTalksPage() {
     if (saving) return;
     setSaving(true);
     await deleteTalk(id);
-    toast("success", "Talk deleted.");
+    toast("success", "Η ομιλία διαγράφηκε.");
     setSaving(false);
     setDeleting(null);
     if (editId === id) closeEdit();
@@ -143,15 +183,15 @@ export default function AdminTalksPage() {
       }
 
       if (!Array.isArray(data) || data.length === 0) {
-        toast("error", "File is empty or invalid.");
+        toast("error", "Το αρχείο είναι άδειο ή μη έγκυρο.");
         return;
       }
 
       await importTalks(data);
-      toast("success", `Imported ${data.length} talks.`);
+      toast("success", `Εισήχθησαν ${data.length} ομιλίες.`);
       load();
     } catch {
-      toast("error", "Failed to parse file. Check format.");
+      toast("error", "Αποτυχία ανάγνωσης αρχείου. Ελέγξτε τη μορφή.");
     }
 
     if (fileRef.current) fileRef.current.value = "";
@@ -188,7 +228,7 @@ export default function AdminTalksPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          Talks{" "}
+          Ομιλίες{" "}
           <span className="text-base font-normal text-gray-400">
             {talks.length}
           </span>
@@ -198,7 +238,7 @@ export default function AdminTalksPage() {
             onClick={() => fileRef.current?.click()}
             className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:bg-gray-800"
           >
-            Import
+            Εισαγωγή
           </button>
           <input
             ref={fileRef}
@@ -245,7 +285,7 @@ export default function AdminTalksPage() {
         </svg>
         <input
           type="text"
-          placeholder="Search by number or title…"
+          placeholder="Αναζήτηση με αριθμό ή τίτλο..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 dark:border-gray-700 dark:bg-gray-900 dark:focus:border-blue-500"
@@ -257,38 +297,57 @@ export default function AdminTalksPage() {
         <div className={editRowCls}>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              New Talk
+              Νέα ομιλία
             </span>
             <button
               onClick={closeAdd}
               className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
-              Esc to cancel
+              Esc για ακύρωση
             </button>
           </div>
-          <div className="flex gap-2" onKeyDown={handleAddKey}>
-            <input
-              type="number"
-              value={newId}
-              onChange={(e) => setNewId(Number(e.target.value))}
-              className={`${inputCls} w-20 flex-shrink-0`}
-              placeholder="#"
-            />
-            <input
-              ref={addRef}
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Talk title…"
-              className={`${inputCls} flex-1`}
-            />
+          <div
+            className="grid grid-cols-[92px_minmax(0,1fr)] gap-2"
+            onKeyDown={handleAddKey}
+          >
+            <div>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                ID (προαιρετικό)
+              </label>
+              <input
+                type="number"
+                value={newIdInput}
+                onChange={(e) => setNewIdInput(e.target.value)}
+                className={inputCls}
+                min={1}
+                placeholder="Αυτόματο"
+                title="Προαιρετικό. Αφήστε κενό για ειδικές καταχωρήσεις."
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                Τίτλος (υποχρεωτικό)
+              </label>
+              <input
+                ref={addRef}
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Συνέλευση / Συνάθροιση / Τίτλος ομιλίας"
+                className={inputCls}
+              />
+            </div>
           </div>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Το ID ομιλίας είναι προαιρετικό. Αφήστε το κενό για ειδικές
+            καταχωρήσεις ώστε να δοθεί αυτόματα από το 999 προς τα κάτω.
+          </p>
           <div className="mt-3 flex justify-end">
             <button
               onClick={saveNew}
               disabled={saving}
               className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Αποθήκευση..." : "Αποθήκευση"}
             </button>
           </div>
         </div>
@@ -297,7 +356,9 @@ export default function AdminTalksPage() {
       {/* Empty state */}
       {filtered.length === 0 && !adding && (
         <p className="py-12 text-center text-sm text-gray-400">
-          {search ? "No talks match your search." : "No talks yet."}
+          {search
+            ? "Δεν βρέθηκαν ομιλίες για την αναζήτησή σας."
+            : "Δεν υπάρχουν ομιλίες ακόμα."}
         </p>
       )}
 
@@ -311,13 +372,13 @@ export default function AdminTalksPage() {
               <div key={t.id} className={editRowCls}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                    Editing #{t.id}
+                    Επεξεργασία #{t.id}
                   </span>
                   <button
                     onClick={closeEdit}
                     className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
-                    Esc to cancel
+                    Esc για ακύρωση
                   </button>
                 </div>
                 <div onKeyDown={handleEditKey}>
@@ -325,7 +386,7 @@ export default function AdminTalksPage() {
                     autoFocus
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder="Talk title…"
+                    placeholder="Τίτλος ομιλίας..."
                     className={`${inputCls} w-full`}
                   />
                 </div>
@@ -334,19 +395,19 @@ export default function AdminTalksPage() {
                   {deleting === t.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-red-500">
-                        Delete this talk?
+                        Διαγραφή αυτής της ομιλίας;
                       </span>
                       <button
                         onClick={() => confirmDelete(t.id)}
                         className="text-xs font-medium text-red-600 hover:text-red-700"
                       >
-                        Yes, delete
+                        Ναι, διαγραφή
                       </button>
                       <button
                         onClick={() => setDeleting(null)}
                         className="text-xs text-gray-400 hover:text-gray-600"
                       >
-                        No
+                        Όχι
                       </button>
                     </div>
                   ) : (
@@ -354,7 +415,7 @@ export default function AdminTalksPage() {
                       onClick={() => setDeleting(t.id)}
                       className="text-xs text-gray-400 hover:text-red-500"
                     >
-                      Delete talk
+                      Διαγραφή ομιλίας
                     </button>
                   )}
                   <button
@@ -362,7 +423,7 @@ export default function AdminTalksPage() {
                     disabled={saving}
                     className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {saving ? "Saving…" : "Save"}
+                    {saving ? "Αποθήκευση..." : "Αποθήκευση"}
                   </button>
                 </div>
               </div>

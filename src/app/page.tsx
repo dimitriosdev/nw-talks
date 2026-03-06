@@ -7,13 +7,17 @@ import { useState, useEffect, useRef } from "react";
 import { getScheduleYears } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { usePreferences } from "@/hooks/usePreferences";
+import { formatText } from "@/lib/localization";
 
 export default function HomePage() {
+  const MIN_SCHEDULE_YEAR = 2023;
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [availableYears, setAvailableYears] = useState<number[]>([currentYear]);
 
   const { isAdmin } = useAuth();
+  const { texts } = usePreferences();
   const router = useRouter();
 
   const { entries, loading } = useSchedule(selectedYear);
@@ -22,9 +26,16 @@ export default function HomePage() {
   // Load available years from Firestore
   useEffect(() => {
     getScheduleYears().then((years) => {
-      if (years.length) setAvailableYears(years);
+      if (!years.length) return;
+      const filteredYears = years.filter((year) => year >= MIN_SCHEDULE_YEAR);
+      const visibleYears = filteredYears.length > 0 ? filteredYears : years;
+      setAvailableYears(visibleYears);
+
+      if (!visibleYears.includes(selectedYear)) {
+        setSelectedYear(visibleYears[0]);
+      }
     });
-  }, []);
+  }, [MIN_SCHEDULE_YEAR, selectedYear]);
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -49,7 +60,7 @@ export default function HomePage() {
     <div className="space-y-5">
       {/* Header row: title + year selector */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Schedule</h1>
+        <h1 className="text-2xl font-bold">{texts.home.title}</h1>
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -75,7 +86,7 @@ export default function HomePage() {
       {/* Empty state */}
       {!loading && all.length === 0 && (
         <p className="py-12 text-center text-gray-500">
-          No talks found for {selectedYear}.
+          {formatText(texts.home.emptyForYear, { year: selectedYear })}
         </p>
       )}
 
@@ -96,12 +107,12 @@ export default function HomePage() {
                   >
                     <div className="h-px flex-1 bg-blue-400 dark:bg-blue-600" />
                     <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                      Today
+                      {texts.common.today}
                     </span>
                     <div className="h-px flex-1 bg-blue-400 dark:bg-blue-600" />
                   </div>
                 )}
-                <div className={entry.date < today ? "opacity-60" : ""}>
+                <div className={entry.date < today ? "opacity-85" : ""}>
                   <ScheduleCard
                     entry={entry}
                     highlight={isFirstFuture}

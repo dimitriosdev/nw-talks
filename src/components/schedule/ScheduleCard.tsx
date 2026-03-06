@@ -1,7 +1,11 @@
+"use client";
+
 import { format, parseISO } from "date-fns";
+import { el, enUS } from "date-fns/locale";
 import type { ScheduleEntryPopulated } from "@/types";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { usePreferences } from "@/hooks/usePreferences";
 
 interface ScheduleCardProps {
   entry: ScheduleEntryPopulated;
@@ -19,50 +23,62 @@ export function ScheduleCard({
   showBadge = false,
   onTitleClick,
 }: ScheduleCardProps) {
+  const { language, texts } = usePreferences();
   const dateObj = parseISO(entry.date);
-  const formattedDate = format(dateObj, "EEEE, MMMM d, yyyy");
+  const formattedDate = format(dateObj, "EEEE, d MMMM yyyy", {
+    locale: language === "el" ? el : enUS,
+  });
+  const title = entry.talk
+    ? `#${entry.talk.id} - ${entry.talk.title}`
+    : entry.customTalkTitle
+      ? entry.customTalkTitle
+      : "-";
+  const isClickable = Boolean(onTitleClick);
 
   return (
     <Card
-      className={
+      className={`${
         highlight
           ? "!border-blue-400 !bg-blue-50 dark:!border-blue-600 dark:!bg-blue-950 ring-2 ring-blue-200 dark:ring-blue-800"
           : ""
+      } ${
+        isClickable
+          ? "group cursor-pointer transition hover:border-blue-300 hover:shadow-md dark:hover:border-blue-700"
+          : ""
+      }`}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={onTitleClick}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onTitleClick?.();
+              }
+            }
+          : undefined
       }
+      title={isClickable ? texts.common.openInAdminSchedule : undefined}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {formattedDate}
           </p>
-          <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-            {onTitleClick ? (
-              <button
-                type="button"
-                onClick={onTitleClick}
-                className="rounded-sm text-left underline decoration-dotted underline-offset-2 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-blue-300"
-                title="Open in admin schedule"
-              >
-                {entry.talk
-                  ? `#${entry.talk.id} — ${entry.talk.title}`
-                  : entry.customTalkTitle
-                    ? entry.customTalkTitle
-                    : "—"}
-              </button>
-            ) : (
-              <>
-                {entry.talk
-                  ? `#${entry.talk.id} — ${entry.talk.title}`
-                  : entry.customTalkTitle
-                    ? entry.customTalkTitle
-                    : "—"}
-              </>
-            )}
+          <p
+            className={`text-base font-semibold text-gray-900 dark:text-gray-100 ${
+              isClickable
+                ? "underline decoration-dotted underline-offset-2 group-hover:text-blue-700 dark:group-hover:text-blue-300"
+                : ""
+            }`}
+          >
+            {title}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {entry.speaker
               ? `${entry.speaker.lastName} ${entry.speaker.firstName} (${entry.speaker.congregation})`
-              : "No speaker assigned"}
+              : texts.common.noSpeakerAssigned}
           </p>
           {entry.notes && (
             <p className="text-xs italic text-gray-400">{entry.notes}</p>

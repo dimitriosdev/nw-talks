@@ -7,9 +7,11 @@ import { isAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { useState } from "react";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
+  const { texts } = usePreferences();
   const router = useRouter();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export default function LoginPage() {
       const admin = await isAdmin(u.email);
       router.replace(admin ? "/admin" : "/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign-in failed");
+      setError(err instanceof Error ? err.message : texts.login.signInFailed);
     } finally {
       setSigningIn(false);
     }
@@ -50,17 +52,17 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center gap-6 py-24">
-      <h1 className="text-2xl font-bold">Admin Sign In</h1>
+      <h1 className="text-2xl font-bold">{texts.login.title}</h1>
       <p className="max-w-sm text-center text-gray-500">
-        Sign in with your Google account to manage schedules, speakers, and talks.
+        {texts.login.subtitle}
       </p>
       <Button onClick={handleSignIn} disabled={signingIn}>
         {signingIn ? (
           <>
-            <Spinner className="mr-2" /> Signing in…
+            <Spinner className="mr-2" /> {texts.login.signingIn}
           </>
         ) : (
-          "Sign in with Google"
+          texts.login.signInGoogle
         )}
       </Button>
       {error && <p className="text-sm text-red-600">{error}</p>}

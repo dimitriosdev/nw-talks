@@ -2,6 +2,9 @@
 
 import { useState, useMemo, useCallback, memo } from "react";
 import type { FreshnessLevel, TalkWithFreshness } from "@/types";
+import { usePreferences } from "@/hooks/usePreferences";
+import { format, parseISO } from "date-fns";
+import { el, enUS } from "date-fns/locale";
 
 interface TalkListProps {
   talks: TalkWithFreshness[];
@@ -9,58 +12,58 @@ interface TalkListProps {
   filter?: FreshnessLevel | null;
 }
 
-/* Freshness tier visual config */
-const freshnessConfig: Record<
-  FreshnessLevel,
-  {
-    label: string;
-    shortLabel: string;
-    description: string;
-    bar: string;
-    dot: string;
-    badge: string;
-    title: string;
-    sectionBorder: string;
-  }
-> = {
-  green: {
-    label: "Available",
-    shortLabel: "Available",
-    description: "12+ months — safe to present",
-    bar: "bg-emerald-500",
-    dot: "bg-emerald-500",
-    badge:
-      "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    title: "text-gray-900 dark:text-gray-100",
-    sectionBorder: "border-emerald-200 dark:border-emerald-800/40",
-  },
-  orange: {
-    label: "Not recommended",
-    shortLabel: "Caution",
-    description: "6–12 months — consider waiting",
-    bar: "bg-amber-400",
-    dot: "bg-amber-400",
-    badge:
-      "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    title: "text-gray-700 dark:text-gray-300",
-    sectionBorder: "border-amber-200 dark:border-amber-800/40",
-  },
-  red: {
-    label: "Too recent",
-    shortLabel: "Too recent",
-    description: "< 6 months — admin override required",
-    bar: "bg-red-500",
-    dot: "bg-red-500",
-    badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    title: "text-gray-400 dark:text-gray-500",
-    sectionBorder: "border-red-200 dark:border-red-800/40",
-  },
-};
+interface FreshnessDisplayConfig {
+  label: string;
+  shortLabel: string;
+  description: string;
+  bar: string;
+  dot: string;
+  badge: string;
+  title: string;
+  sectionBorder: string;
+}
 
 const TIERS: FreshnessLevel[] = ["green", "orange", "red"];
 
 export function TalkList({ talks, filter = null }: TalkListProps) {
+  const { texts, language } = usePreferences();
   const [search, setSearch] = useState("");
+  const dateLocale = language === "el" ? el : enUS;
+
+  const freshnessConfig: Record<FreshnessLevel, FreshnessDisplayConfig> = {
+    green: {
+      label: texts.talks.freshness.greenLabel,
+      shortLabel: texts.talks.freshness.greenShort,
+      description: texts.talks.freshness.greenDescription,
+      bar: "bg-emerald-500",
+      dot: "bg-emerald-500",
+      badge:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      title: "text-gray-900 dark:text-gray-100",
+      sectionBorder: "border-emerald-200 dark:border-emerald-800/40",
+    },
+    orange: {
+      label: texts.talks.freshness.orangeLabel,
+      shortLabel: texts.talks.freshness.orangeShort,
+      description: texts.talks.freshness.orangeDescription,
+      bar: "bg-amber-400",
+      dot: "bg-amber-400",
+      badge:
+        "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      title: "text-gray-700 dark:text-gray-300",
+      sectionBorder: "border-amber-200 dark:border-amber-800/40",
+    },
+    red: {
+      label: texts.talks.freshness.redLabel,
+      shortLabel: texts.talks.freshness.redShort,
+      description: texts.talks.freshness.redDescription,
+      bar: "bg-red-500",
+      dot: "bg-red-500",
+      badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      title: "text-gray-400 dark:text-gray-500",
+      sectionBorder: "border-red-200 dark:border-red-800/40",
+    },
+  };
 
   // Memoised filter + sort — only recomputes when inputs change
   const grouped = useMemo(() => {
@@ -127,7 +130,7 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
         </svg>
         <input
           type="text"
-          placeholder="Search by title or number…"
+          placeholder={texts.talks.searchPlaceholder}
           value={search}
           onChange={handleSearch}
           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm transition-shadow placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
@@ -136,7 +139,7 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
           <button
             onClick={() => setSearch("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label="Clear search"
+            aria-label={texts.common.clearSearch}
           >
             <svg
               className="h-4 w-4"
@@ -157,10 +160,11 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
 
       {/* Results count */}
       <p className="text-xs text-gray-400">
-        {grouped.total} talk{grouped.total !== 1 ? "s" : ""}
+        {grouped.total}{" "}
+        {grouped.total !== 1 ? texts.talks.talksCount : texts.talks.talk}
         {filter &&
-          ` · filtered by ${freshnessConfig[filter].label.toLowerCase()}`}
-        {search && ` · matching "${search.trim()}"`}
+          ` · ${texts.talks.filteredBy} ${freshnessConfig[filter].label.toLowerCase()}`}
+        {search && ` · ${texts.talks.matching} "${search.trim()}"`}
       </p>
 
       {/* Empty state */}
@@ -179,8 +183,8 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
               d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-sm font-medium">No talks found</p>
-          <p className="mt-1 text-xs">Try adjusting your search or filter</p>
+          <p className="text-sm font-medium">{texts.talks.noTalksFound}</p>
+          <p className="mt-1 text-xs">{texts.talks.tryAdjusting}</p>
         </div>
       ) : grouped.flat ? (
         /* Flat grid sorted by number (no filter active) */
@@ -231,13 +235,53 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
 /*  Memoised expandable card for a single talk                        */
 /* ------------------------------------------------------------------ */
 const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
+  const { texts, language } = usePreferences();
   const [open, setOpen] = useState(false);
   const count = talk.presentations.length;
-  const cfg = freshnessConfig[talk.freshnessLevel];
+  const dateLocale = language === "el" ? el : enUS;
+  const formattedLastPresentedDate = talk.lastPresentedDate
+    ? format(parseISO(talk.lastPresentedDate), "d MMM yyyy", {
+        locale: dateLocale,
+      })
+    : null;
+  const cfg: Record<FreshnessLevel, FreshnessDisplayConfig> = {
+    green: {
+      label: texts.talks.freshness.greenLabel,
+      shortLabel: texts.talks.freshness.greenShort,
+      description: texts.talks.freshness.greenDescription,
+      bar: "bg-emerald-500",
+      dot: "bg-emerald-500",
+      badge:
+        "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      title: "text-gray-900 dark:text-gray-100",
+      sectionBorder: "border-emerald-200 dark:border-emerald-800/40",
+    },
+    orange: {
+      label: texts.talks.freshness.orangeLabel,
+      shortLabel: texts.talks.freshness.orangeShort,
+      description: texts.talks.freshness.orangeDescription,
+      bar: "bg-amber-400",
+      dot: "bg-amber-400",
+      badge:
+        "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      title: "text-gray-700 dark:text-gray-300",
+      sectionBorder: "border-amber-200 dark:border-amber-800/40",
+    },
+    red: {
+      label: texts.talks.freshness.redLabel,
+      shortLabel: texts.talks.freshness.redShort,
+      description: texts.talks.freshness.redDescription,
+      bar: "bg-red-500",
+      dot: "bg-red-500",
+      badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      title: "text-gray-400 dark:text-gray-500",
+      sectionBorder: "border-red-200 dark:border-red-800/40",
+    },
+  }[talk.freshnessLevel];
 
   const monthsLabel =
     talk.monthsSincePresented !== null
-      ? `${talk.monthsSincePresented}mo ago`
+      ? `${talk.monthsSincePresented} ${texts.talks.monthsAgo}`
       : null;
 
   return (
@@ -283,14 +327,17 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-400 dark:text-gray-500">
             {count === 0
-              ? "Never presented"
+              ? texts.talks.neverPresented
               : monthsLabel
-                ? `Last: ${talk.lastPresentedDate} (${monthsLabel})`
-                : `Last: ${talk.lastPresentedDate}`}
+                ? `${texts.talks.lastPresented} ${formattedLastPresentedDate} (${monthsLabel})`
+                : `${texts.talks.lastPresented} ${formattedLastPresentedDate}`}
           </span>
           {count > 0 && (
             <span className="flex items-center gap-1 text-gray-400 transition-colors group-hover:text-blue-500 dark:text-gray-500 dark:group-hover:text-blue-400">
-              {count} presentation{count !== 1 ? "s" : ""}
+              {count}{" "}
+              {count !== 1
+                ? texts.talks.presentations
+                : texts.talks.presentation}
               <svg
                 className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
                 fill="none"
@@ -319,7 +366,9 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
                 className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400"
               >
                 <span className="shrink-0 font-mono text-[11px] text-gray-400 dark:text-gray-500">
-                  {p.date}
+                  {format(parseISO(p.date), "d MMM yyyy", {
+                    locale: dateLocale,
+                  })}
                 </span>
                 <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                 <span className="truncate text-right">

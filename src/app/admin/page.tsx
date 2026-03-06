@@ -3,10 +3,12 @@
 import { useSchedule } from "@/hooks/useSchedule";
 import { Card } from "@/components/ui/Card";
 import { SkeletonCard } from "@/components/ui/Spinner";
+import { usePreferences } from "@/hooks/usePreferences";
 
 export default function AdminDashboard() {
   const currentYear = new Date().getFullYear();
   const { entries, loading } = useSchedule(currentYear);
+  const { texts } = usePreferences();
 
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = entries.filter((e) => e.date >= today);
@@ -21,17 +23,17 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      label: "Unassigned",
+      label: texts.adminOverview.unassigned,
       count: openCount,
       color: "text-gray-600",
     },
     {
-      label: "Confirmed",
+      label: texts.adminOverview.confirmed,
       count: confirmedCount,
       color: "text-emerald-600",
     },
     {
-      label: "Cancelled",
+      label: texts.adminOverview.cancelled,
       count: cancelledCount,
       color: "text-red-600",
     },
@@ -39,7 +41,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Overview</h1>
+      <h1 className="text-2xl font-bold">{texts.adminOverview.title}</h1>
 
       {loading ? (
         <div className="grid grid-cols-3 gap-4">
