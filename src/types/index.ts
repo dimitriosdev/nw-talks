@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // NW-Talks — Shared TypeScript types
-// Mirrors the Firestore data model defined in PROJECT_SPEC.md §3
+// Mirrors the Firestore data model defined in docs/PROJECT_SPEC.md §3
 // ---------------------------------------------------------------------------
 
 /** A public talk (static reference data). */

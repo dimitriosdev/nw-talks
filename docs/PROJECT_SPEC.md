@@ -19,7 +19,7 @@ Build a mobile-first web application for a congregation to manage public talk sc
 | Database        | Firebase Firestore (NoSQL)                                             |
 | Authentication  | Firebase Auth (Google Login for Admins; Public/read-only for Speakers) |
 | Date Utilities  | `date-fns`                                                             |
-| Deployment      | Vercel (recommended) or Firebase Hosting                               |
+| Deployment      | Vercel                                                                 |
 | Node            | >= 20 LTS                                                              |
 | Package Manager | npm                                                                    |
 

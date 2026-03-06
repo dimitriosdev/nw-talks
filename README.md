@@ -1,83 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NW-Talks
 
-## Automated Deploys With Vercel + GitHub Actions
+**Public talk schedule manager for congregations.**
 
-This repository includes a workflow at `.github/workflows/vercel-deploy.yml`:
+Mobile-first web app for managing weekend public talks with automatic freshness tracking, bilingual support (English/Greek), and distinct admin/public views.
 
-- Pull requests to `main` create a **Preview** deployment.
-- Pushes to `main` create a **Production** deployment.
+---
 
-### 1. Link this project to Vercel once
+## Tech Stack
 
-Run these commands locally from the repository root:
+- **Framework:** Next.js 16 (App Router, TypeScript, React 19)
+- **Database:** Firebase Firestore
+- **Auth:** Firebase Auth (Google)
+- **Styling:** Tailwind CSS 4
+- **Deployment:** Vercel via GitHub Actions
+
+---
+
+## Quick Start
+
+### 1. Clone & Install
 
 ```bash
-npm install --global vercel@latest
-vercel login
-vercel link
+git clone <repo-url>
+cd nw-talks
+npm install
 ```
 
-After linking, get your IDs:
+### 2. Configure Firebase
+
+Create `.env.local`:
 
 ```bash
-cat .vercel/project.json
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-You will need:
-
-- `orgId` -> `VERCEL_ORG_ID`
-- `projectId` -> `VERCEL_PROJECT_ID`
-
-Create a Vercel token at `https://vercel.com/account/tokens` and save it as `VERCEL_TOKEN`.
-
-### 2. Add GitHub repository secrets
-
-In GitHub: `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
-
-Add these 3 secrets:
-
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
-
-### 3. Push to GitHub
-
-Once secrets are set:
-
-- Open a PR to `main` to validate Preview deploys.
-- Merge/push to `main` to deploy to Production.
-
-## Getting Started
-
-First, run the development server:
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Seed Data (Optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+node scripts/seed.mjs
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Key Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Freshness Tracking:** Color-coded system (green/orange/red) based on months since last presentation
+- **Bilingual:** English/Greek localization with instant switching
+- **Schedule Management:** Auto-generate yearly schedules based on meeting day
+- **Role-Based Access:** Admin (Google auth) vs. public (read-only)
+- **Mobile-First:** Optimized for phones and tablets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/              # Next.js routes (public + admin)
+├── components/       # React components
+│   ├── ui/          # Reusable UI primitives
+│   └── schedule/    # Schedule-specific components
+├── hooks/           # Custom React hooks
+├── lib/             # Core logic (Firestore, auth, freshness)
+└── types/           # TypeScript definitions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+scripts/             # Data seeding & migrations
+```
+
+---
+
+## Documentation
+
+- **[QUICK_REFERENCE.md](./docs/QUICK_REFERENCE.md)** — Common tasks & commands
+- **[SETUP.md](./docs/SETUP.md)** — Detailed setup & configuration
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** — Code structure & patterns
+- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** — GitHub Actions + Vercel workflow
+- **[API.md](./docs/API.md)** — Functions, hooks & utilities reference
+- **[PROJECT_SPEC.md](./docs/PROJECT_SPEC.md)** — Full requirements & data model
+
+---
+
+## Scripts
+
+| Command                 | Description                     |
+| ----------------------- | ------------------------------- |
+| `npm run dev`           | Start development server        |
+| `npm run build`         | Build production bundle         |
+| `npm run start`         | Run production server locally   |
+| `npm run lint`          | Lint TypeScript/React code      |
+| `npm run revert:export` | Restore data from export backup |
+
+---
+
+## Routes
+
+| Path              | Access | Description                |
+| ----------------- | ------ | -------------------------- |
+| `/`               | Public | Upcoming schedule          |
+| `/talks`          | Public | Searchable talk gallery    |
+| `/past`           | Public | Past presentations archive |
+| `/login`          | Public | Google sign-in             |
+| `/admin`          | Admin  | Dashboard                  |
+| `/admin/schedule` | Admin  | Schedule editor            |
+| `/admin/speakers` | Admin  | Speaker management         |
+| `/admin/talks`    | Admin  | Talk library + import      |
+| `/admin/settings` | Admin  | Year, meeting day, admins  |
+
+---
+
+## Environment Variables
+
+Required for Firebase connection (see [SETUP.md](./docs/SETUP.md)):
+
+```
+NEXT_PUBLIC_FIREBASE_API_KEY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+NEXT_PUBLIC_FIREBASE_PROJECT_ID
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+NEXT_PUBLIC_FIREBASE_APP_ID
+```
+
+---
+
+## License
+
+Private project — not licensed for public distribution.

@@ -68,19 +68,25 @@ const PreferencesContext = createContext<PreferencesState>({
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(
-    () => getStoredPreferences().language,
-  );
-  const [theme, setTheme] = useState<ThemeMode>(
-    () => getStoredPreferences().theme,
-  );
+  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+  const [theme, setTheme] = useState<ThemeMode>(DEFAULT_THEME);
+  const [mounted, setMounted] = useState(false);
+
+  // Sync from localStorage after mount to prevent hydration mismatch
+  useEffect(() => {
+    const prefs = getStoredPreferences();
+    if (prefs.language !== language) setLanguage(prefs.language);
+    if (prefs.theme !== theme) setTheme(prefs.theme);
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ language, theme }),
     );
-  }, [language, theme]);
+  }, [language, theme, mounted]);
 
   useEffect(() => {
     const root = document.documentElement;
