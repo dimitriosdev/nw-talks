@@ -1,5 +1,52 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Automated Deploys With Vercel + GitHub Actions
+
+This repository includes a workflow at `.github/workflows/vercel-deploy.yml`:
+
+- Pull requests to `main` create a **Preview** deployment.
+- Pushes to `main` create a **Production** deployment.
+
+### 1. Link this project to Vercel once
+
+Run these commands locally from the repository root:
+
+```bash
+npm install --global vercel@latest
+vercel login
+vercel link
+```
+
+After linking, get your IDs:
+
+```bash
+cat .vercel/project.json
+```
+
+You will need:
+
+- `orgId` -> `VERCEL_ORG_ID`
+- `projectId` -> `VERCEL_PROJECT_ID`
+
+Create a Vercel token at `https://vercel.com/account/tokens` and save it as `VERCEL_TOKEN`.
+
+### 2. Add GitHub repository secrets
+
+In GitHub: `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
+
+Add these 3 secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+### 3. Push to GitHub
+
+Once secrets are set:
+
+- Open a PR to `main` to validate Preview deploys.
+- Merge/push to `main` to deploy to Production.
+
 ## Getting Started
 
 First, run the development server:
