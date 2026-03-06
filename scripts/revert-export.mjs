@@ -6,7 +6,7 @@
  *   npm run revert:export
  */
 
-import { readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { initializeApp } from "firebase/app";
@@ -21,6 +21,17 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, "..");
 const scriptsDir = resolve(rootDir, "scripts");
+const exportsRootDir = resolve(scriptsDir, "exports");
+
+function getTimestampLabel(date = new Date()) {
+  const y = String(date.getFullYear());
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${y}-${m}-${d}_${hh}-${mm}-${ss}`;
+}
 
 function parseEnvFile(filePath) {
   const envText = readFileSync(filePath, "utf8");
@@ -40,8 +51,8 @@ function parseEnvFile(filePath) {
   return Object.fromEntries(pairs);
 }
 
-function writeJson(fileName, payload) {
-  const filePath = resolve(scriptsDir, fileName);
+function writeJson(outputDir, fileName, payload) {
+  const filePath = resolve(outputDir, fileName);
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
@@ -56,6 +67,10 @@ function toYear(dateStr) {
 }
 
 async function run() {
+  const runLabel = getTimestampLabel();
+  const outputDir = resolve(exportsRootDir, runLabel);
+  mkdirSync(outputDir, { recursive: true });
+
   const env = parseEnvFile(resolve(rootDir, ".env.local"));
   const requiredEnv = [
     "NEXT_PUBLIC_FIREBASE_API_KEY",
@@ -86,13 +101,7 @@ async function run() {
   const talksSnap = await getDocs(
     query(collection(db, "talks"), orderBy("id")),
   );
-  const speakersSnap = await getDocs(
-    query(
-      collection(db, "speakers"),
-      orderBy("lastName"),
-      orderBy("firstName"),
-    ),
-  );
+  const speakersSnap = await getDocs(collection(db, "speakers"));
   const scheduleSnap = await getDocs(
     query(collection(db, "schedule"), orderBy("date")),
   );
@@ -124,6 +133,11 @@ async function run() {
     speakersById.set(docSnap.id, speaker);
     return speaker;
   });
+  speakersJson.sort((a, b) => {
+    const byLast = a.lastName.localeCompare(b.lastName, "el");
+    if (byLast !== 0) return byLast;
+    return a.firstName.localeCompare(b.firstName, "el");
+  });
 
   const scheduleByYear = new Map();
   for (const docSnap of scheduleSnap.docs) {
@@ -153,8 +167,8 @@ async function run() {
     scheduleByYear.set(year, bucket);
   }
 
-  writeJson("titles.json", talksJson);
-  writeJson("speakers.json", speakersJson);
+  writeJson(outputDir, "titles.json", talksJson);
+  writeJson(outputDir, "speakers.json", speakersJson);
 
   const years = [...scheduleByYear.keys()].sort((a, b) => a - b);
   for (const year of years) {
@@ -162,9 +176,10 @@ async function run() {
       .get(year)
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date));
-    writeJson(`${year}.json`, rows);
+    writeJson(outputDir, `${year}.json`, rows);
   }
 
+  console.log(`Export output directory: ${outputDir}`);
   console.log(`Exported talks: ${talksJson.length}`);
   console.log(`Exported speakers: ${speakersJson.length}`);
   console.log(`Exported schedule years: ${years.join(", ") || "none"}`);
