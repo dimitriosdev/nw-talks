@@ -132,13 +132,17 @@ export async function getScheduleEntries(
     q = query(scheduleCol(), orderBy("date"));
   }
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ customTalkTitle: "", ...d.data(), id: d.id }) as ScheduleEntry);
+  return snap.docs.map(
+    (d) => ({ customTalkTitle: "", ...d.data(), id: d.id }) as ScheduleEntry,
+  );
 }
 
 export async function getConfirmedEntries(): Promise<ScheduleEntry[]> {
   const q = query(scheduleCol(), where("status", "==", "confirmed"));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ customTalkTitle: "", ...d.data(), id: d.id }) as ScheduleEntry);
+  return snap.docs.map(
+    (d) => ({ customTalkTitle: "", ...d.data(), id: d.id }) as ScheduleEntry,
+  );
 }
 
 /** Return the distinct years that have at least one schedule entry. */

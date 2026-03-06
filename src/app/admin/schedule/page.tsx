@@ -230,9 +230,7 @@ export default function AdminSchedulePage() {
     // Speaker
     const speaker = speakers.find((s) => s.id === entry.speakerId);
     setSelectedSpeakerId(entry.speakerId);
-    setSpeakerQuery(
-      speaker ? `${speaker.lastName} ${speaker.firstName}` : "",
-    );
+    setSpeakerQuery(speaker ? `${speaker.lastName} ${speaker.firstName}` : "");
     setCreatingNewSpeaker(false);
     setNewFirstName("");
     setNewLastName("");
@@ -540,10 +538,7 @@ export default function AdminSchedulePage() {
                       {/* Header: date + delete */}
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-500">
-                          {format(
-                            parseISO(entry.date),
-                            "EEEE, MMMM d, yyyy",
-                          )}
+                          {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
                         </p>
                         <div className="flex items-center gap-2">
                           {confirmDeleteId === entry.id ? (
@@ -914,10 +909,7 @@ export default function AdminSchedulePage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <p className="text-sm text-gray-500">
-                          {format(
-                            parseISO(entry.date),
-                            "EEEE, MMMM d, yyyy",
-                          )}
+                          {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
                         </p>
                         {isCancelled ? (
                           <p className="text-sm font-medium text-red-400 line-through">
