@@ -42,7 +42,8 @@ next-env.d.ts
 
 # scripts data exports
 scripts/**/*.json
-!scripts/**/titles.json
 
+# exclude titles.json
+**/titles.json
 
 .vercel
