@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   getScheduleEntries,
   updateScheduleEntry,
-  deleteScheduleEntry,
   createScheduleEntry,
   initializeYear,
   getSpeakers,
@@ -22,21 +21,24 @@ import type {
   ScheduleStatus,
 } from "@/types";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
 import { format, parseISO } from "date-fns";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 export default function AdminSchedulePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [freshTalks, setFreshTalks] = useState<TalkWithFreshness[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   /* --- inline edit state --- */
   const [inlineId, setInlineId] = useState<string | null>(null);
@@ -87,6 +89,14 @@ export default function AdminSchedulePage() {
   const speakerDropdownRef = useRef<HTMLDivElement>(null);
   const talkInputRef = useRef<HTMLInputElement>(null);
   const talkDropdownRef = useRef<HTMLDivElement>(null);
+  const deepLinkHandledRef = useRef(false);
+  const yearSwipeStartXRef = useRef<number | null>(null);
+
+  const requestedEditId = searchParams.get("edit");
+  const requestedYearParam = searchParams.get("year");
+  const requestedYear = requestedYearParam ? Number(requestedYearParam) : null;
+  const hasRequestedYear =
+    Number.isInteger(requestedYear) && requestedYear !== null;
 
   /* ---------------------------------------------------------------- */
   /*  Data loading                                                     */
@@ -102,23 +112,74 @@ export default function AdminSchedulePage() {
     ]);
     setEntries(s);
     setSpeakers(sp);
-    if (sett && !settings) setSelectedYear(sett.activeYear);
+    if (sett && !settings && !hasRequestedYear)
+      setSelectedYear(sett.activeYear);
     setSettings(sett);
     setFreshTalks(computeFreshness(t, conf, sp));
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear]);
+  }, [selectedYear, hasRequestedYear]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (hasRequestedYear && requestedYear !== selectedYear) {
+      setSelectedYear(requestedYear as number);
+    }
+  }, [hasRequestedYear, requestedYear, selectedYear]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 320);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const today = new Date().toISOString().slice(0, 10);
+  const currentYear = new Date().getFullYear();
 
   const sortedEntries = useMemo(
     () => [...entries].sort((a, b) => a.date.localeCompare(b.date)),
     [entries],
   );
+
+  // Temporary test range: show years from 2020 to activeYear + 1.
+  const earliestYear = 2020;
+
+  const maxAllowedYear = (settings?.activeYear ?? currentYear) + 1;
+  const yearOptions = useMemo(() => {
+    const years: number[] = [];
+    for (let year = earliestYear; year <= maxAllowedYear; year += 1) {
+      years.push(year);
+    }
+    return years;
+  }, [earliestYear, maxAllowedYear]);
+  const canNavigateBack = selectedYear > earliestYear;
+  const canNavigateForward = selectedYear < maxAllowedYear;
+
+  const visibleYearOptions = useMemo(() => {
+    if (yearOptions.length <= 3) return yearOptions;
+    const selectedIdx = yearOptions.indexOf(selectedYear);
+    if (selectedIdx <= 0) return yearOptions.slice(0, 3);
+    if (selectedIdx >= yearOptions.length - 1)
+      return yearOptions.slice(yearOptions.length - 3);
+    return yearOptions.slice(selectedIdx - 1, selectedIdx + 2);
+  }, [yearOptions, selectedYear]);
+
+  useEffect(() => {
+    if (selectedYear < earliestYear) {
+      setSelectedYear(earliestYear);
+      return;
+    }
+    if (selectedYear > maxAllowedYear) {
+      setSelectedYear(maxAllowedYear);
+    }
+  }, [selectedYear, earliestYear, maxAllowedYear]);
 
   /* ---------------------------------------------------------------- */
   /*  Speaker autocomplete                                             */
@@ -223,39 +284,44 @@ export default function AdminSchedulePage() {
   /* ---------------------------------------------------------------- */
   /*  Inline edit helpers                                              */
   /* ---------------------------------------------------------------- */
-  const openInlineEdit = (entry: ScheduleEntry) => {
-    setConfirmDeleteId(null);
-    setInlineId(entry.id);
+  const openInlineEdit = useCallback(
+    (entry: ScheduleEntry) => {
+      setConfirmDeleteId(null);
+      setInlineId(entry.id);
 
-    // Speaker
-    const speaker = speakers.find((s) => s.id === entry.speakerId);
-    setSelectedSpeakerId(entry.speakerId);
-    setSpeakerQuery(speaker ? `${speaker.lastName} ${speaker.firstName}` : "");
-    setCreatingNewSpeaker(false);
-    setNewFirstName("");
-    setNewLastName("");
-    setNewCongregation("");
-    setNewPhone("");
+      // Speaker
+      const speaker = speakers.find((s) => s.id === entry.speakerId);
+      setSelectedSpeakerId(entry.speakerId);
+      setSpeakerQuery(
+        speaker ? `${speaker.lastName} ${speaker.firstName}` : "",
+      );
+      setCreatingNewSpeaker(false);
+      setNewFirstName("");
+      setNewLastName("");
+      setNewCongregation("");
+      setNewPhone("");
 
-    // Talk — restore from standard or custom
-    const talk = freshTalks.find((t) => t.id === entry.talkId);
-    setSelectedTalkId(entry.talkId);
-    if (talk) {
-      setTalkQuery(`#${talk.id} — ${talk.title}`);
-      setCustomTalkTitle("");
-    } else if (entry.customTalkTitle) {
-      setTalkQuery(entry.customTalkTitle);
-      setCustomTalkTitle(entry.customTalkTitle);
-    } else {
-      setTalkQuery("");
-      setCustomTalkTitle("");
-    }
+      // Talk — restore from standard or custom
+      const talk = freshTalks.find((t) => t.id === entry.talkId);
+      setSelectedTalkId(entry.talkId);
+      if (talk) {
+        setTalkQuery(`#${talk.id} — ${talk.title}`);
+        setCustomTalkTitle("");
+      } else if (entry.customTalkTitle) {
+        setTalkQuery(entry.customTalkTitle);
+        setCustomTalkTitle(entry.customTalkTitle);
+      } else {
+        setTalkQuery("");
+        setCustomTalkTitle("");
+      }
 
-    setInlineConfirmed(entry.status === "confirmed");
-    setInlineNotes(entry.notes);
-    setShowSpeakerDropdown(false);
-    setShowTalkDropdown(false);
-  };
+      setInlineConfirmed(entry.status === "confirmed");
+      setInlineNotes(entry.notes);
+      setShowSpeakerDropdown(false);
+      setShowTalkDropdown(false);
+    },
+    [speakers, freshTalks],
+  );
 
   const cancelInlineEdit = () => {
     setInlineId(null);
@@ -264,6 +330,19 @@ export default function AdminSchedulePage() {
     setShowSpeakerDropdown(false);
     setShowTalkDropdown(false);
   };
+
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    if (!requestedEditId) return;
+    if (loading) return;
+
+    const target = entries.find((e) => e.id === requestedEditId);
+    if (!target) return;
+
+    openInlineEdit(target);
+    deepLinkHandledRef.current = true;
+    router.replace("/admin/schedule", { scroll: false });
+  }, [requestedEditId, loading, entries, router, openInlineEdit]);
 
   /* ---------------------------------------------------------------- */
   /*  Handlers                                                         */
@@ -333,36 +412,22 @@ export default function AdminSchedulePage() {
     load();
   };
 
-  const handleQuickConfirm = async (entry: ScheduleEntry) => {
-    const newStatus: ScheduleStatus =
-      entry.status === "confirmed" ? "open" : "confirmed";
-    await updateScheduleEntry(entry.id, { status: newStatus });
-    toast("success", newStatus === "confirmed" ? "Confirmed." : "Unconfirmed.");
-    load();
-  };
-
-  const handleQuickCancel = async (entry: ScheduleEntry) => {
-    await updateScheduleEntry(entry.id, {
-      status: "cancelled" as ScheduleStatus,
-      notes: entry.notes || "Blacked out",
+  const handleDeleteEntry = async (id: string) => {
+    const entry = entries.find((e) => e.id === id);
+    await updateScheduleEntry(id, {
+      status: "open",
+      notes: "",
       talkId: null,
       customTalkTitle: "",
       speakerId: null,
     });
-    toast("info", `${entry.date} blacked out.`);
-    load();
-  };
-
-  const handleDeleteEntry = async (id: string) => {
-    const entry = entries.find((e) => e.id === id);
-    await deleteScheduleEntry(id);
-    toast("success", `Deleted entry for ${entry?.date ?? "unknown"}.`);
+    toast("success", `Emptied entry for ${entry?.date ?? "unknown"}.`);
     setConfirmDeleteId(null);
     if (inlineId === id) cancelInlineEdit();
     load();
   };
 
-  const handleAddEntry = async (skipRedCheck = false) => {
+  const handleAddEntry = async () => {
     if (!newEntryDate) {
       toast("error", "Date is required.");
       return;
@@ -386,6 +451,15 @@ export default function AdminSchedulePage() {
   /* ---------------------------------------------------------------- */
   const inputCls =
     "w-full rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 dark:border-gray-700 dark:focus:border-blue-500";
+
+  const selectedSpeaker = selectedSpeakerId
+    ? (speakers.find((s) => s.id === selectedSpeakerId) ?? null)
+    : null;
+  const normalizeTel = (phone: string) => phone.replace(/[^+\d]/g, "");
+  const normalizeWhatsApp = (phone: string) => phone.replace(/\D/g, "");
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   /* ---------------------------------------------------------------- */
   /*  Render                                                           */
@@ -419,26 +493,79 @@ export default function AdminSchedulePage() {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add Date
         </button>
       </div>
 
       {/* Year navigation */}
-      <div className="flex items-center justify-center gap-4">
-        <Button variant="ghost" onClick={() => setSelectedYear((y) => y - 1)}>
-          ← {selectedYear - 1}
-        </Button>
-        <span className="text-lg font-semibold">
-          {selectedYear}
-          {settings && selectedYear === settings.activeYear && (
-            <span className="ml-2 text-xs font-normal text-blue-500">
-              (active)
-            </span>
-          )}
-        </span>
-        <Button variant="ghost" onClick={() => setSelectedYear((y) => y + 1)}>
-          {selectedYear + 1} →
-        </Button>
+      <div className="space-y-2">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => canNavigateBack && setSelectedYear((y) => y - 1)}
+              disabled={!canNavigateBack}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-800"
+              aria-label="Previous year"
+              title="Previous year"
+            >
+              ←
+            </button>
+
+            <div
+              className="flex w-[210px] items-center justify-center gap-1 overflow-hidden rounded-lg border border-gray-200 bg-white px-2 py-1 select-none dark:border-gray-700 dark:bg-gray-900"
+              onTouchStart={(e) => {
+                yearSwipeStartXRef.current = e.touches[0]?.clientX ?? null;
+              }}
+              onTouchEnd={(e) => {
+                const startX = yearSwipeStartXRef.current;
+                yearSwipeStartXRef.current = null;
+                if (startX === null) return;
+
+                const endX = e.changedTouches[0]?.clientX ?? startX;
+                const deltaX = endX - startX;
+
+                if (Math.abs(deltaX) < 40) return;
+                if (deltaX > 0 && canNavigateBack) {
+                  setSelectedYear((y) => y - 1);
+                } else if (deltaX < 0 && canNavigateForward) {
+                  setSelectedYear((y) => y + 1);
+                }
+              }}
+            >
+              {visibleYearOptions.map((year) => {
+                const isActive = year === selectedYear;
+                const isConfiguredActive = settings?.activeYear === year;
+
+                return (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={`rounded-md px-2.5 py-1 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : isConfiguredActive
+                          ? "text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {year}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() =>
+                canNavigateForward && setSelectedYear((y) => y + 1)
+              }
+              disabled={!canNavigateForward}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-400 dark:hover:bg-gray-800"
+              aria-label="Next year"
+              title="Next year"
+            >
+              →
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Add entry */}
@@ -535,7 +662,7 @@ export default function AdminSchedulePage() {
                   /* ============== INLINE EDIT ============== */
                   <div className="rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30">
                     <div className="space-y-3">
-                      {/* Header: date + delete */}
+                      {/* Header: date + clear/close actions */}
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-500">
                           {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
@@ -544,35 +671,36 @@ export default function AdminSchedulePage() {
                           {confirmDeleteId === entry.id ? (
                             <>
                               <span className="text-xs text-red-500">
-                                Delete?
+                                Clear this entry?
                               </span>
                               <button
                                 onClick={() => handleDeleteEntry(entry.id)}
-                                className="text-xs font-medium text-red-600 hover:text-red-700"
+                                className="rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
                               >
-                                Yes
+                                Clear now
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="text-xs text-gray-400 hover:text-gray-600"
+                                className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                               >
-                                No
+                                Keep editing
                               </button>
                             </>
                           ) : (
                             <button
                               onClick={() => setConfirmDeleteId(entry.id)}
-                              className="text-xs text-gray-400 hover:text-red-500"
-                              title="Delete entry"
+                              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                              title="Clear speaker, talk and notes"
                             >
-                              Delete
+                              Clear entry
                             </button>
                           )}
                           <button
                             onClick={cancelInlineEdit}
-                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            title="Close editor"
                           >
-                            Esc
+                            Close
                           </button>
                         </div>
                       </div>
@@ -714,6 +842,56 @@ export default function AdminSchedulePage() {
                                 className={inputCls}
                               />
                             </div>
+                          </div>
+                        )}
+
+                        {selectedSpeaker && !creatingNewSpeaker && (
+                          <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                            <span>
+                              Phone: {selectedSpeaker.phone || "Not available"}
+                            </span>
+
+                            {normalizeTel(selectedSpeaker.phone) && (
+                              <a
+                                href={`tel:${normalizeTel(selectedSpeaker.phone)}`}
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700"
+                                aria-label="Call speaker"
+                                title="Call"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                </svg>
+                              </a>
+                            )}
+
+                            {normalizeWhatsApp(selectedSpeaker.phone) && (
+                              <a
+                                href={`https://wa.me/${normalizeWhatsApp(selectedSpeaker.phone)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white transition hover:bg-green-700"
+                                aria-label="Message speaker on WhatsApp"
+                                title="WhatsApp"
+                              >
+                                <svg
+                                  className="h-3.5 w-3.5"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path d="M19.11 4.93A9.86 9.86 0 0 0 12.09 2a9.93 9.93 0 0 0-8.6 14.91L2 22l5.24-1.37A9.93 9.93 0 1 0 19.11 4.93zm-7.02 15.19a8.28 8.28 0 0 1-4.2-1.14l-.3-.18-3.11.81.83-3.03-.2-.31a8.3 8.3 0 1 1 6.98 3.85zm4.55-6.23c-.25-.12-1.46-.72-1.69-.8-.23-.09-.39-.12-.56.12-.16.24-.64.79-.78.96-.14.16-.29.18-.54.06-.25-.12-1.06-.39-2.01-1.25-.74-.66-1.24-1.48-1.39-1.73-.14-.24-.02-.37.11-.49.11-.1.25-.27.37-.4.12-.14.16-.24.25-.4.08-.16.04-.3-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.41-.56-.42h-.48c-.16 0-.43.06-.65.3-.23.24-.87.85-.87 2.08s.89 2.41 1.01 2.58c.12.16 1.74 2.66 4.21 3.73.59.25 1.04.4 1.4.51.59.19 1.13.16 1.56.1.48-.07 1.46-.6 1.67-1.18.21-.58.21-1.08.15-1.18-.06-.1-.22-.16-.46-.28z" />
+                                </svg>
+                              </a>
+                            )}
                           </div>
                         )}
                       </div>
@@ -899,10 +1077,10 @@ export default function AdminSchedulePage() {
                 ) : (
                   /* ============== DISPLAY MODE ============== */
                   <div
-                    onClick={() => !isCancelled && openInlineEdit(entry)}
+                    onClick={() => openInlineEdit(entry)}
                     className={`group rounded-xl border bg-white px-4 py-3 transition dark:bg-gray-900 ${
                       isCancelled
-                        ? "border-red-200 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20"
+                        ? "cursor-pointer border-red-200 bg-red-50/40 hover:border-red-300 hover:shadow-sm dark:border-red-900 dark:bg-red-950/20 dark:hover:border-red-700"
                         : "cursor-pointer border-gray-200 hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:hover:border-blue-600"
                     }`}
                   >
@@ -912,9 +1090,14 @@ export default function AdminSchedulePage() {
                           {format(parseISO(entry.date), "EEEE, MMMM d, yyyy")}
                         </p>
                         {isCancelled ? (
-                          <p className="text-sm font-medium text-red-400 line-through">
-                            {entry.notes || "Blacked out"}
-                          </p>
+                          <>
+                            <p className="text-sm font-medium text-red-400 line-through">
+                              {entry.notes || "Cancelled"}
+                            </p>
+                            <p className="text-xs text-red-500/80">
+                              Click to re-enter this date
+                            </p>
+                          </>
                         ) : (
                           <>
                             <p className="font-medium">
@@ -948,35 +1131,27 @@ export default function AdminSchedulePage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {isCancelled ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/40 dark:text-red-400">
-                            ✕ Cancelled
-                          </span>
-                        ) : isConfirmed ? (
                           <button
-                            onClick={() => handleQuickConfirm(entry)}
-                            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60"
-                            title="Click to unconfirm"
+                            onClick={() => openInlineEdit(entry)}
+                            className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-400 dark:hover:bg-red-900/60"
+                            title="Re-enter this date"
+                          >
+                            ↺ Re-enter
+                          </button>
+                        ) : isConfirmed ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                            title="Confirmed"
                           >
                             ✓ Confirmed
-                          </button>
+                          </span>
                         ) : (
-                          <button
-                            onClick={() => handleQuickConfirm(entry)}
-                            className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-400 transition hover:bg-emerald-50 hover:text-emerald-600 dark:bg-gray-800 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
-                            title="Click to confirm"
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-400 dark:bg-gray-800"
+                            title="Open"
                           >
                             ○ Open
-                          </button>
-                        )}
-
-                        {!isPast && !isCancelled && (
-                          <button
-                            onClick={() => handleQuickCancel(entry)}
-                            className="rounded-md px-2 py-0.5 text-[11px] font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                            title="Black out this date"
-                          >
-                            ✕ Cancel
-                          </button>
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1023,7 +1198,7 @@ export default function AdminSchedulePage() {
                   if (ctx === "inline") {
                     handleInlineSave(true);
                   } else {
-                    handleAddEntry(true);
+                    handleAddEntry();
                   }
                 }}
               >
@@ -1032,6 +1207,18 @@ export default function AdminSchedulePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-lg transition hover:bg-blue-700"
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          ↑
+        </button>
       )}
     </div>
   );

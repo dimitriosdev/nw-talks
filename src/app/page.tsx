@@ -5,11 +5,16 @@ import { ScheduleCard } from "@/components/schedule/ScheduleCard";
 import { SkeletonCard } from "@/components/ui/Spinner";
 import { useState, useEffect, useRef } from "react";
 import { getScheduleYears } from "@/lib/firestore";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [availableYears, setAvailableYears] = useState<number[]>([currentYear]);
+
+  const { isAdmin } = useAuth();
+  const router = useRouter();
 
   const { entries, loading } = useSchedule(selectedYear);
   const todayRef = useRef<HTMLDivElement>(null);
@@ -97,7 +102,18 @@ export default function HomePage() {
                   </div>
                 )}
                 <div className={entry.date < today ? "opacity-60" : ""}>
-                  <ScheduleCard entry={entry} highlight={isFirstFuture} />
+                  <ScheduleCard
+                    entry={entry}
+                    highlight={isFirstFuture}
+                    onTitleClick={
+                      isAdmin
+                        ? () =>
+                            router.push(
+                              `/admin/schedule?edit=${encodeURIComponent(entry.id)}&year=${selectedYear}`,
+                            )
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             );

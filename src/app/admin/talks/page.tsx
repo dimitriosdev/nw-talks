@@ -224,7 +224,6 @@ export default function AdminTalksPage() {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Add
           </button>
         </div>
       </div>

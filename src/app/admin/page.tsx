@@ -3,7 +3,6 @@
 import { useSchedule } from "@/hooks/useSchedule";
 import { Card } from "@/components/ui/Card";
 import { SkeletonCard } from "@/components/ui/Spinner";
-import Link from "next/link";
 
 export default function AdminDashboard() {
   const currentYear = new Date().getFullYear();
@@ -25,19 +24,16 @@ export default function AdminDashboard() {
       label: "Unassigned",
       count: openCount,
       color: "text-gray-600",
-      href: "/admin/schedule",
     },
     {
       label: "Confirmed",
       count: confirmedCount,
       color: "text-emerald-600",
-      href: "/admin/schedule",
     },
     {
       label: "Cancelled",
       count: cancelledCount,
       color: "text-red-600",
-      href: "/admin/schedule",
     },
   ];
 
@@ -54,50 +50,13 @@ export default function AdminDashboard() {
       ) : (
         <div className="grid grid-cols-3 gap-4">
           {stats.map((s) => (
-            <Link key={s.label} href={s.href}>
-              <Card className="text-center transition-shadow hover:shadow-md">
-                <p className={`text-3xl font-bold ${s.color}`}>{s.count}</p>
-                <p className="text-sm text-gray-500">{s.label}</p>
-              </Card>
-            </Link>
+            <Card key={s.label} className="text-center">
+              <p className={`text-3xl font-bold ${s.color}`}>{s.count}</p>
+              <p className="text-sm text-gray-500">{s.label}</p>
+            </Card>
           ))}
         </div>
       )}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link href="/admin/schedule">
-          <Card className="transition-shadow hover:shadow-md">
-            <h2 className="font-semibold">Schedule Manager</h2>
-            <p className="text-sm text-gray-500">
-              Assign speakers & talks, manage blackouts
-            </p>
-          </Card>
-        </Link>
-        <Link href="/admin/speakers">
-          <Card className="transition-shadow hover:shadow-md">
-            <h2 className="font-semibold">Speakers</h2>
-            <p className="text-sm text-gray-500">
-              Add, edit, or remove speakers
-            </p>
-          </Card>
-        </Link>
-        <Link href="/admin/talks">
-          <Card className="transition-shadow hover:shadow-md">
-            <h2 className="font-semibold">Talks</h2>
-            <p className="text-sm text-gray-500">
-              Manage talk catalogue &amp; bulk import
-            </p>
-          </Card>
-        </Link>
-        <Link href="/admin/settings">
-          <Card className="transition-shadow hover:shadow-md">
-            <h2 className="font-semibold">Settings</h2>
-            <p className="text-sm text-gray-500">
-              Year, preferred day, cooldown &amp; admin list
-            </p>
-          </Card>
-        </Link>
-      </div>
     </div>
   );
 }

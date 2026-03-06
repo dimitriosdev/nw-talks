@@ -236,7 +236,6 @@ export default function AdminSpeakersPage() {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Add
         </button>
       </div>
 
