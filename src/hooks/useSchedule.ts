@@ -59,12 +59,12 @@ export function useFreshTalks() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [allTalks, confirmed, speakers] = await Promise.all([
+      const [allTalks, allSchedule, speakers] = await Promise.all([
         getTalks(),
-        getConfirmedEntries(),
+        getScheduleEntries(),
         getSpeakers(),
       ]);
-      const result = computeFreshness(allTalks, confirmed, speakers);
+      const result = computeFreshness(allTalks, allSchedule, speakers);
       if (!cancelled) {
         setTalks(result);
         setLoading(false);

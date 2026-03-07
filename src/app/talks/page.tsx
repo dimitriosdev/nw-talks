@@ -7,8 +7,10 @@ import { useState } from "react";
 import type { FreshnessLevel } from "@/types";
 import { usePreferences } from "@/hooks/usePreferences";
 
+type TalkFilter = FreshnessLevel | "scheduled" | null;
+
 export default function TalksPage() {
-  const [filter, setFilter] = useState<FreshnessLevel | null>(null);
+  const [filter, setFilter] = useState<TalkFilter>(null);
   const [showGuide, setShowGuide] = useState(false);
   const { texts } = usePreferences();
 
@@ -24,13 +26,16 @@ export default function TalksPage() {
   }
 
   const greenCount = regularTalks.filter(
-    (t) => t.freshnessLevel === "green",
+    (t) => t.freshnessLevel === "green" && !t.isScheduledForFuture,
   ).length;
   const orangeCount = regularTalks.filter(
-    (t) => t.freshnessLevel === "orange",
+    (t) => t.freshnessLevel === "orange" && !t.isScheduledForFuture,
   ).length;
   const redCount = regularTalks.filter(
-    (t) => t.freshnessLevel === "red",
+    (t) => t.freshnessLevel === "red" && !t.isScheduledForFuture,
+  ).length;
+  const scheduledCount = regularTalks.filter(
+    (t) => t.isScheduledForFuture,
   ).length;
   const activeFilterLabel =
     filter === "green"
@@ -39,10 +44,12 @@ export default function TalksPage() {
         ? texts.talks.freshness.orangeLabel
         : filter === "red"
           ? texts.talks.freshness.redLabel
-          : texts.talks.allTalks;
+          : filter === "scheduled"
+            ? texts.talks.scheduledLabel
+            : texts.talks.allTalks;
 
   const pillBtn = (
-    level: FreshnessLevel | null,
+    level: TalkFilter,
     label: string,
     count: number,
     dotCls: string,
@@ -124,6 +131,14 @@ export default function TalksPage() {
             "bg-red-400/20",
             "bg-red-400/40",
           )}
+          {pillBtn(
+            "scheduled",
+            texts.talks.scheduled,
+            scheduledCount,
+            "bg-purple-400",
+            "bg-purple-400/20",
+            "bg-purple-400/40",
+          )}
         </div>
 
         <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -153,6 +168,10 @@ export default function TalksPage() {
               <span>
                 <span className="mr-1 inline-block h-2 w-2 rounded-full bg-red-400" />
                 {texts.talks.redGuide}
+                <span>
+                  <span className="mr-1 inline-block h-2 w-2 rounded-full bg-purple-400" />
+                  {texts.talks.scheduledGuide}
+                </span>
               </span>
             </div>
           </div>

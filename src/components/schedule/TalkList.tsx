@@ -9,7 +9,7 @@ import { el, enUS } from "date-fns/locale";
 interface TalkListProps {
   talks: TalkWithFreshness[];
   /** When set, only talks of this freshness level are shown. */
-  filter?: FreshnessLevel | null;
+  filter?: FreshnessLevel | "scheduled" | null;
 }
 
 interface FreshnessDisplayConfig {
@@ -65,6 +65,13 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
     },
   };
 
+  const filterLabel =
+    filter === "scheduled"
+      ? texts.talks.scheduledLabel
+      : filter
+        ? freshnessConfig[filter].label
+        : null;
+
   // Memoised filter + sort — only recomputes when inputs change
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -73,7 +80,11 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
 
     const matches = talks.filter((t) => {
       // Freshness filter
-      if (filter !== null && t.freshnessLevel !== filter) return false;
+      if (filter === "scheduled") {
+        if (!t.isScheduledForFuture) return false;
+      } else if (filter !== null) {
+        if (t.freshnessLevel !== filter || t.isScheduledForFuture) return false;
+      }
       // Text / number search
       if (!q) return true;
       if (isNum) {
@@ -163,7 +174,8 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
         {grouped.total}{" "}
         {grouped.total !== 1 ? texts.talks.talksCount : texts.talks.talk}
         {filter &&
-          ` · ${texts.talks.filteredBy} ${freshnessConfig[filter].label.toLowerCase()}`}
+          filterLabel &&
+          ` · ${texts.talks.filteredBy} ${filterLabel.toLowerCase()}`}
         {search && ` · ${texts.talks.matching} "${search.trim()}"`}
       </p>
 
@@ -244,7 +256,14 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
         locale: dateLocale,
       })
     : null;
-  const cfg: FreshnessDisplayConfig = {
+  const formattedNextScheduledDate = talk.nextScheduledDate
+    ? format(parseISO(talk.nextScheduledDate), "d MMM yyyy", {
+        locale: dateLocale,
+      })
+    : null;
+
+  // Override config for future scheduled talks
+  const baseCfg: FreshnessDisplayConfig = {
     green: {
       label: texts.talks.freshness.greenLabel,
       shortLabel: texts.talks.freshness.greenShort,
@@ -274,10 +293,25 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
       bar: "bg-red-500",
       dot: "bg-red-500",
       badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-      title: "text-gray-400 dark:text-gray-500",
+      title: "text-red-400 dark:text-red-500",
       sectionBorder: "border-red-200 dark:border-red-800/40",
     },
   }[talk.freshnessLevel];
+
+  // Override for future scheduled talks
+  const cfg: FreshnessDisplayConfig = talk.isScheduledForFuture
+    ? {
+        label: texts.talks.scheduledLabel || "Scheduled",
+        shortLabel: texts.talks.scheduledShort || "Scheduled",
+        description:
+          texts.talks.scheduledDescription || "Will be presented soon",
+        bar: "bg-red-500",
+        dot: "bg-red-500",
+        badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        title: "text-red-400 dark:text-red-500",
+        sectionBorder: "border-red-200 dark:border-red-800/40",
+      }
+    : baseCfg;
 
   const monthsLabel =
     talk.monthsSincePresented !== null
@@ -287,7 +321,7 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
   return (
     <div
       className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-900 ${
-        talk.freshnessLevel === "red"
+        talk.isScheduledForFuture || talk.freshnessLevel === "red"
           ? "border-red-200/60 dark:border-red-800/40"
           : talk.freshnessLevel === "orange"
             ? "border-amber-200/60 dark:border-amber-800/40"
@@ -326,11 +360,13 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
         {/* Footer: last presented + expand hint */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-400 dark:text-gray-500">
-            {count === 0
-              ? texts.talks.neverPresented
-              : monthsLabel
-                ? `${texts.talks.lastPresented} ${formattedLastPresentedDate} (${monthsLabel})`
-                : `${texts.talks.lastPresented} ${formattedLastPresentedDate}`}
+            {talk.isScheduledForFuture
+              ? `${texts.talks.notAvailable} · ${texts.talks.scheduledFor} ${formattedNextScheduledDate}`
+              : count === 0
+                ? texts.talks.neverPresented
+                : monthsLabel
+                  ? `${texts.talks.lastPresented} ${formattedLastPresentedDate} (${monthsLabel})`
+                  : `${texts.talks.lastPresented} ${formattedLastPresentedDate}`}
           </span>
           {count > 0 && (
             <span className="flex items-center gap-1 text-gray-400 transition-colors group-hover:text-blue-500 dark:text-gray-500 dark:group-hover:text-blue-400">

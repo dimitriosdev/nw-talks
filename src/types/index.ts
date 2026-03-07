@@ -94,6 +94,10 @@ export interface TalkWithFreshness extends Talk {
   freshnessLevel: FreshnessLevel;
   /** Number of months since the talk was last presented, or `null` if never. */
   monthsSincePresented: number | null;
+  /** Whether this talk is scheduled for a future date (confirmed). */
+  isScheduledForFuture: boolean;
+  /** The next scheduled date for this talk, or `null` if not scheduled. */
+  nextScheduledDate: string | null;
 }
 
 /** A schedule entry joined with its related speaker & talk data. */

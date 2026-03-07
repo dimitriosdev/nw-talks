@@ -25,7 +25,7 @@ function classifyFreshness(monthsSince: number | null): FreshnessLevel {
 }
 
 /**
- * Given all confirmed schedule entries, speakers, and the full talk list,
+ * Given all schedule entries, speakers, and the full talk list,
  * compute freshness metadata for each talk.
  *
  * Freshness is determined by the 3-tier system:
@@ -35,16 +35,25 @@ function classifyFreshness(monthsSince: number | null): FreshnessLevel {
  */
 export function computeFreshness(
   talks: Talk[],
-  confirmedEntries: ScheduleEntry[],
+  allEntries: ScheduleEntry[],
   speakers: Speaker[],
   referenceDate: Date = new Date(),
 ): TalkWithFreshness[] {
   const speakerMap = new Map(speakers.map((s) => [s.id, s]));
 
-  // Build a map of talkId → array of presentation records
+  // Split entries into past and future based on reference date
+  const referenceDateStr = referenceDate.toISOString().split("T")[0]; // YYYY-MM-DD
+  const pastEntries = allEntries.filter(
+    (entry) => entry.status === "confirmed" && entry.date < referenceDateStr,
+  );
+  const futureEntries = allEntries.filter(
+    (entry) => entry.talkId !== null && entry.date >= referenceDateStr,
+  );
+
+  // Build a map of talkId → array of presentation records (past confirmed only)
   const presentationsMap = new Map<number, PresentationRecord[]>();
 
-  for (const entry of confirmedEntries) {
+  for (const entry of pastEntries) {
     if (entry.talkId === null) continue;
     const record: PresentationRecord = {
       date: entry.date,
@@ -55,6 +64,16 @@ export function computeFreshness(
     const list = presentationsMap.get(entry.talkId) ?? [];
     list.push(record);
     presentationsMap.set(entry.talkId, list);
+  }
+
+  // Build a map of talkId → next scheduled date (future only, any status)
+  const futureScheduleMap = new Map<number, string>();
+  for (const entry of futureEntries) {
+    if (entry.talkId === null) continue;
+    const currentNext = futureScheduleMap.get(entry.talkId);
+    if (!currentNext || entry.date < currentNext) {
+      futureScheduleMap.set(entry.talkId, entry.date);
+    }
   }
 
   return talks.map((talk) => {
@@ -73,6 +92,10 @@ export function computeFreshness(
     // Legacy boolean: true when green
     const isFresh = freshnessLevel === "green";
 
+    // Check if this talk is scheduled for a future date
+    const nextScheduledDate = futureScheduleMap.get(talk.id) ?? null;
+    const isScheduledForFuture = nextScheduledDate !== null;
+
     return {
       ...talk,
       lastPresentedDate: lastDate,
@@ -80,6 +103,8 @@ export function computeFreshness(
       isFresh,
       freshnessLevel,
       monthsSincePresented,
+      isScheduledForFuture,
+      nextScheduledDate,
     };
   });
 }

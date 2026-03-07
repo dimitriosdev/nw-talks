@@ -177,13 +177,13 @@ function getScheduleStatus(entry, speakerId, todayIso) {
   const hasSpeaker = Boolean(speakerId);
   const hasNotes = Boolean(entry.notes.trim());
 
-  if (entry.date > todayIso) {
-    if (!hasTalk && !hasSpeaker && hasNotes) return "cancelled";
-    return "open";
-  }
-
+  // Cancelled if notes but no talk/speaker
   if (!hasTalk && !hasSpeaker && hasNotes) return "cancelled";
+
+  // Confirmed if talk or speaker assigned (regardless of past/future)
   if (hasTalk || hasSpeaker) return "confirmed";
+
+  // Otherwise open
   return "open";
 }
 
