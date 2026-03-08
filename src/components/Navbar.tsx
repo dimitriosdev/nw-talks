@@ -158,12 +158,17 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-700 dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link
-          href="/"
-          className="text-lg font-bold text-gray-900 dark:text-white"
-        >
-          NW-Talks
-        </Link>
+          <Link
+            href="/"
+            className="flex items-center text-lg font-bold text-gray-900 dark:text-white"
+          >
+            <img
+              src="/ico.svg"
+              alt="NW-Talks icon"
+              className="mr-2 h-6 w-6"
+            />
+            NW-Talks
+          </Link>
 
         {isAdmin && onAdminRoute && (
           <nav

@@ -25,6 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="el">
+      <head>
+        <meta name="apple-mobile-web-app-title" content="NW-Talks" />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}
       >
