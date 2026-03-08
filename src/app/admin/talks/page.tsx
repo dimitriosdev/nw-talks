@@ -308,7 +308,12 @@ export default function AdminTalksPage() {
               <option
                 key={category}
                 value={category}
-                style={{ padding: "8px 16px", fontSize: "15px", borderRadius: "16px", margin: "4px 0" }}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "15px",
+                  borderRadius: "16px",
+                  margin: "4px 0",
+                }}
               >
                 {category}
               </option>
