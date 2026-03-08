@@ -63,6 +63,7 @@ export async function getTalks(): Promise<Talk[]> {
       // Prefer document ID for consistency when legacy rows miss `id`.
       id: Number(data.id ?? d.id),
       title: String(data.title ?? ""),
+      category: String(data.category ?? ""),
     };
   });
 }
@@ -74,6 +75,7 @@ export async function getTalk(id: number): Promise<Talk | null> {
   return {
     id: Number(data.id ?? snap.id),
     title: String(data.title ?? ""),
+    category: String(data.category ?? ""),
   };
 }
 

@@ -12,6 +12,12 @@ export default function AdminTalksPage() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const categories = useMemo(
+    () => Array.from(new Set(talks.map((t) => t.category).filter(Boolean))),
+    [talks],
+  );
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [newIdInput, setNewIdInput] = useState("");
   const [newTitle, setNewTitle] = useState("");
@@ -32,16 +38,20 @@ export default function AdminTalksPage() {
 
   /* ---- search ---- */
   const filtered = useMemo(() => {
-    if (!search.trim()) return talks;
+    let result = talks;
+    if (categoryFilter) {
+      result = result.filter((t) => t.category === categoryFilter);
+    }
+    if (!search.trim()) return result;
     const q = search.toLowerCase();
     const numQ = Number(search);
-    return talks.filter(
+    return result.filter(
       (t) =>
         t.title.toLowerCase().includes(q) ||
         String(t.id).startsWith(search.trim()) ||
         (!isNaN(numQ) && t.id === numQ),
     );
-  }, [talks, search]);
+  }, [talks, search, categoryFilter]);
 
   /* ---- inline edit ---- */
   const openEdit = (t: Talk) => {
@@ -49,12 +59,14 @@ export default function AdminTalksPage() {
     setAdding(false);
     setEditId(t.id);
     setEditTitle(t.title);
+    setEditCategory(t.category ?? "");
   };
 
   const closeEdit = () => {
     setEditId(null);
     setDeleting(null);
     setEditTitle("");
+    setEditCategory("");
   };
 
   const saveEdit = async () => {
@@ -64,7 +76,11 @@ export default function AdminTalksPage() {
       return;
     }
     setSaving(true);
-    await saveTalk({ id: editId, title: editTitle.trim() });
+    await saveTalk({
+      id: editId,
+      title: editTitle.trim(),
+      category: editCategory.trim(),
+    });
     toast("success", "Η ομιλία ενημερώθηκε.");
     setSaving(false);
     closeEdit();
@@ -134,7 +150,11 @@ export default function AdminTalksPage() {
     }
 
     setSaving(true);
-    await saveTalk({ id: resolvedId, title: trimmedTitle });
+    await saveTalk({
+      id: resolvedId,
+      title: trimmedTitle,
+      category: newCategory.trim(),
+    });
     toast("success", `Η ομιλία #${resolvedId} προστέθηκε.`);
     setSaving(false);
     closeAdd();
@@ -171,13 +191,11 @@ export default function AdminTalksPage() {
           lines[0]?.toLowerCase().includes("title");
         const start = hasHeader ? 1 : 0;
         data = lines.slice(start).map((line) => {
-          const firstComma = line.indexOf(",");
+          const parts = line.split(",");
           return {
-            id: Number(line.slice(0, firstComma).trim()),
-            title: line
-              .slice(firstComma + 1)
-              .trim()
-              .replace(/^"|"$/g, ""),
+            id: Number(parts[0].trim()),
+            category: parts[1]?.trim() ?? "",
+            title: parts[2]?.trim().replace(/^"|"$/g, "") ?? "",
           };
         });
       }
@@ -268,6 +286,31 @@ export default function AdminTalksPage() {
         </div>
       </div>
 
+      {/* Category filter dropdown */}
+      {categories.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-blue-600">Κατηγορία:</span>
+          <select
+            value={categoryFilter || ""}
+            onChange={(e) => setCategoryFilter(e.target.value || null)}
+            className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-400/20 text-blue-900 border border-blue-400/30 shadow-sm backdrop-blur transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 hover:bg-blue-400/30 hover:border-blue-400/50"
+            style={{
+              minHeight: "28px",
+              minWidth: "120px",
+              appearance: "none",
+              boxShadow: "0 1px 4px 0 rgb(30 64 175 / 0.08)",
+            }}
+          >
+            <option value="">Όλες οι κατηγορίες</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Search */}
       <div className="relative">
         <svg
@@ -307,7 +350,7 @@ export default function AdminTalksPage() {
             </button>
           </div>
           <div
-            className="grid grid-cols-[92px_minmax(0,1fr)] gap-2"
+            className="grid grid-cols-[92px_minmax(0,1fr)_minmax(0,1fr)] gap-2"
             onKeyDown={handleAddKey}
           >
             <div>
@@ -322,6 +365,17 @@ export default function AdminTalksPage() {
                 min={1}
                 placeholder="Αυτόματο"
                 title="Προαιρετικό. Αφήστε κενό για ειδικές καταχωρήσεις."
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                Κατηγορία
+              </label>
+              <input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="Κατηγορία ομιλίας"
+                className={inputCls}
               />
             </div>
             <div>
@@ -381,7 +435,7 @@ export default function AdminTalksPage() {
                     Esc για ακύρωση
                   </button>
                 </div>
-                <div onKeyDown={handleEditKey}>
+                <div className="flex flex-col gap-2" onKeyDown={handleEditKey}>
                   <input
                     autoFocus
                     value={editTitle}
@@ -389,6 +443,18 @@ export default function AdminTalksPage() {
                     placeholder="Τίτλος ομιλίας..."
                     className={`${inputCls} w-full`}
                   />
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className={`${inputCls} w-full`}
+                  >
+                    <option value="">Επιλέξτε κατηγορία...</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   {/* Delete */}
@@ -433,13 +499,20 @@ export default function AdminTalksPage() {
           return (
             <div key={t.id} className={rowCls} onClick={() => openEdit(t)}>
               <div className="flex items-center justify-between">
-                <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                  <span className="flex-shrink-0 text-xs font-bold text-gray-300 dark:text-gray-600">
-                    #{t.id}
-                  </span>
-                  <span className="truncate text-sm font-medium">
-                    {t.title}
-                  </span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-baseline gap-2">
+                    <span className="flex-shrink-0 text-xs font-bold text-gray-300 dark:text-gray-600">
+                      #{t.id}
+                    </span>
+                    <span className="truncate text-sm font-medium">
+                      {t.title}
+                    </span>
+                  </div>
+                  {t.category && (
+                    <span className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                      {t.category}
+                    </span>
+                  )}
                 </div>
                 <svg
                   className="ml-2 h-4 w-4 flex-shrink-0 text-gray-300 transition group-hover:text-blue-400 dark:text-gray-600"

@@ -9,6 +9,8 @@ export interface Talk {
   id: number;
   /** The theme / title of the talk. */
   title: string;
+  /** Category of the talk. */
+  category: string;
 }
 
 /** A speaker who can be assigned to a scheduled date. */

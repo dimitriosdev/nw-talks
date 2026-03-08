@@ -11,11 +11,17 @@ type TalkFilter = FreshnessLevel | "scheduled" | null;
 
 export default function TalksPage() {
   const [filter, setFilter] = useState<TalkFilter>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const { texts } = usePreferences();
 
   const { talks, loading } = useFreshTalks();
   const regularTalks = talks.filter((talk) => talk.id < 900 || talk.id > 999);
+
+  // Extract unique categories
+  const categories = Array.from(
+    new Set(regularTalks.map((t) => t.category)),
+  ).filter(Boolean);
 
   if (loading) {
     return (
@@ -56,40 +62,68 @@ export default function TalksPage() {
     bgCls: string,
     activeBgCls: string,
   ) => {
-    // "All talks" pill (level === null) is active when no filter is set;
-    // color pills toggle their own filter on/off.
     const isActive = level === null ? filter === null : filter === level;
     return (
       <button
         onClick={() =>
           setFilter(level === null ? null : isActive ? null : level)
         }
-        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm backdrop-blur transition-all ${
+        className={`inline-flex cursor-pointer items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold backdrop-blur transition-all ${
           isActive
             ? `${activeBgCls} ring-2 ring-white/60 shadow-lg scale-105`
             : `${bgCls} hover:scale-105 hover:brightness-125`
         }`}
+        style={{ minHeight: "22px" }}
       >
-        {dotCls && <span className={`h-2 w-2 rounded-full ${dotCls}`} />}
-        <span className="text-lg font-bold">{count}</span> {label}
+        {dotCls && <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />}
+        <span className="font-bold">{count}</span> {label}
       </button>
     );
   };
 
+  // Category pill button
+  // Category dropdown
+  const categoryDropdown = (
+    <select
+      value={categoryFilter || ""}
+      onChange={(e) => setCategoryFilter(e.target.value || null)}
+      className="ml-2 rounded-full px-3 py-1 text-xs font-semibold bg-blue-400/20 text-blue-900 border border-blue-400/30 shadow-sm backdrop-blur transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 hover:bg-blue-400/30 hover:border-blue-400/50"
+      style={{
+        minHeight: "28px",
+        minWidth: "120px",
+        appearance: "none",
+        boxShadow: "0 1px 4px 0 rgb(30 64 175 / 0.08)",
+      }}
+    >
+      <option value="" className="bg-white text-blue-900">
+        {texts.talks.allCategories || "All categories"}
+      </option>
+      {categories.map((category) => (
+        <option
+          key={category}
+          value={category}
+          className="bg-white text-blue-900 font-semibold"
+        >
+          {category}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <div className="space-y-6">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-6 py-8 text-white shadow-lg sm:px-8 sm:py-10">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-6 py-6 text-white shadow-lg sm:px-8 sm:py-8">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex items-start justify-between gap-3">
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
             {texts.talks.title}
           </h1>
           <button
             type="button"
             onClick={() => setShowGuide((prev) => !prev)}
-            className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-blue-50 backdrop-blur transition hover:bg-white/25"
+            className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-medium text-blue-50 backdrop-blur transition hover:bg-white/25"
             aria-expanded={showGuide}
             aria-controls="talk-gallery-guide"
           >
@@ -97,56 +131,68 @@ export default function TalksPage() {
           </button>
         </div>
 
-        {/* Clickable filter pills */}
-        <div className="relative mt-5 flex flex-wrap gap-3 text-sm">
+        {/* Combined filter pills row */}
+        <div className="relative mt-2 flex flex-wrap items-center gap-0.5 text-xs">
           {pillBtn(
             null,
             texts.talks.talks,
             regularTalks.length,
             "",
-            "bg-white/15",
-            "bg-white/30",
+            "bg-white/15 px-2 py-0.5",
+            "bg-white/30 px-2 py-0.5",
           )}
           {pillBtn(
             "green",
             texts.talks.available,
             greenCount,
             "bg-emerald-400",
-            "bg-emerald-400/20",
-            "bg-emerald-400/40",
+            "bg-emerald-400/20 px-2 py-0.5",
+            "bg-emerald-400/40 px-2 py-0.5",
           )}
           {pillBtn(
             "orange",
             texts.talks.notRecommended,
             orangeCount,
             "bg-amber-400",
-            "bg-amber-400/20",
-            "bg-amber-400/40",
+            "bg-amber-400/20 px-2 py-0.5",
+            "bg-amber-400/40 px-2 py-0.5",
           )}
           {pillBtn(
             "red",
             texts.talks.tooRecent,
             redCount,
             "bg-red-400",
-            "bg-red-400/20",
-            "bg-red-400/40",
+            "bg-red-400/20 px-2 py-0.5",
+            "bg-red-400/40 px-2 py-0.5",
           )}
           {pillBtn(
             "scheduled",
             texts.talks.scheduled,
             scheduledCount,
             "bg-purple-400",
-            "bg-purple-400/20",
-            "bg-purple-400/40",
+            "bg-purple-400/20 px-2 py-0.5",
+            "bg-purple-400/40 px-2 py-0.5",
           )}
+          {/* Category dropdown */}
+          {categories.length > 0 && (
+            <span className="text-xs text-blue-100 ml-2">
+              {texts.talks.filterByCategory}
+            </span>
+          )}
+          {categories.length > 0 && categoryDropdown}
         </div>
 
-        <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <p className="rounded-full bg-white/10 px-2.5 py-1 text-blue-100">
+        <div className="relative mt-2 flex flex-wrap items-center gap-1 text-xs">
+          <p className="rounded-full bg-white/10 px-2 py-0.5 text-blue-100">
             {texts.talks.showing}{" "}
             <span className="font-semibold text-white">
               {activeFilterLabel}
             </span>
+            {categoryFilter && (
+              <span className="ml-2 text-xs text-blue-200">
+                · {categoryFilter}
+              </span>
+            )}
           </p>
         </div>
 
@@ -178,7 +224,11 @@ export default function TalksPage() {
         )}
       </div>
 
-      <TalkList talks={regularTalks} filter={filter} />
+      <TalkList
+        talks={regularTalks}
+        filter={filter}
+        categoryFilter={categoryFilter}
+      />
     </div>
   );
 }

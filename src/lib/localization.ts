@@ -47,6 +47,8 @@ export const translations = {
     },
     talks: {
       title: "Ομιλίες",
+      allCategories: "Όλες οι κατηγορίες",
+      filterByCategory: "Κατηγορία:",
       showGuide: "Εμφάνιση οδηγού",
       hideGuide: "Απόκρυψη οδηγού",
       talks: "ομιλίες",
@@ -170,6 +172,8 @@ export const translations = {
     },
     talks: {
       title: "Talk Gallery",
+      allCategories: "All categories",
+      filterByCategory: "Category:",
       showGuide: "Show guide",
       hideGuide: "Hide guide",
       talks: "talks",

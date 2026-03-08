@@ -10,6 +10,8 @@ interface TalkListProps {
   talks: TalkWithFreshness[];
   /** When set, only talks of this freshness level are shown. */
   filter?: FreshnessLevel | "scheduled" | null;
+  /** When set, only talks of this category are shown. */
+  categoryFilter?: string | null;
 }
 
 interface FreshnessDisplayConfig {
@@ -25,10 +27,19 @@ interface FreshnessDisplayConfig {
 
 const TIERS: FreshnessLevel[] = ["green", "orange", "red"];
 
-export function TalkList({ talks, filter = null }: TalkListProps) {
+export function TalkList({
+  talks,
+  filter = null,
+  categoryFilter = null,
+}: TalkListProps) {
   const { texts, language } = usePreferences();
   const [search, setSearch] = useState("");
   const dateLocale = language === "el" ? el : enUS;
+
+  // Filter talks by category if categoryFilter is set
+  const filteredTalks = categoryFilter
+    ? talks.filter((t) => t.category === categoryFilter)
+    : talks;
 
   const freshnessConfig: Record<FreshnessLevel, FreshnessDisplayConfig> = {
     green: {
@@ -78,7 +89,7 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
     const isNum = /^\d+$/.test(q);
     const numQ = isNum ? Number(q) : NaN;
 
-    const matches = talks.filter((t) => {
+    const matches = filteredTalks.filter((t) => {
       // Freshness filter
       if (filter === "scheduled") {
         if (!t.isScheduledForFuture) return false;
@@ -88,7 +99,7 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
       // Text / number search
       if (!q) return true;
       if (isNum) {
-        // Prefix match on ID: "1" finds 1, 10, 100, 143…
+        // Prefix match on ID: "1" finds 1, 10, 100, 143
         return String(t.id).startsWith(q);
       }
       return t.title.toLowerCase().includes(q) || String(t.id).includes(q);
@@ -104,8 +115,8 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
       return a.id - b.id;
     });
 
-    // When showing all talks (no filter) → flat list sorted by id
-    // When filtering a specific tier → group by tier
+    // When showing all talks (no filter)  flat list sorted by id
+    // When filtering a specific tier  group by tier
     if (filter === null) {
       return { flat: matches, groups: null, total: matches.length };
     }
@@ -116,7 +127,7 @@ export function TalkList({ talks, filter = null }: TalkListProps) {
       if (items.length > 0) groups.push({ level, items });
     }
     return { flat: null, groups, total: matches.length };
-  }, [talks, filter, search]);
+  }, [filteredTalks, filter, search]);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -352,10 +363,13 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
           </span>
         </div>
 
-        {/* Title */}
+        {/* Title and Category */}
         <h3 className={`text-sm font-semibold leading-snug ${cfg.title}`}>
           {talk.title}
         </h3>
+        {talk.category && (
+          <div className="text-xs text-gray-400 mt-1">{talk.category}</div>
+        )}
 
         {/* Footer: last presented + expand hint */}
         <div className="flex items-center justify-between text-[11px]">
