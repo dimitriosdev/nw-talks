@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -67,7 +68,11 @@ const adminTabs: {
           strokeLinejoin="round"
         />
         <circle cx="9.5" cy="7" r="3" />
-        <path d="M20 8v6M23 11h-6" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M20 8v6M23 11h-6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -158,17 +163,19 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur dark:border-gray-700 dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link
-            href="/"
-            className="flex items-center text-lg font-bold text-gray-900 dark:text-white"
-          >
-            <img
-              src="/ico.svg"
-              alt="NW-Talks icon"
-              className="mr-2 h-6 w-6"
-            />
-            NW-Talks
-          </Link>
+        <Link
+          href="/"
+          className="flex items-center text-lg font-bold text-gray-900 dark:text-white"
+        >
+          <Image
+            src="/icon0.svg"
+            alt="NW-Talks icon"
+            width={24}
+            height={24}
+            className="mr-2 h-6 w-6"
+          />
+          NW-Talks
+        </Link>
 
         {isAdmin && onAdminRoute && (
           <nav
