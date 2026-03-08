@@ -729,38 +729,112 @@ export default function AdminSchedulePage() {
                         <div className="flex items-center gap-2">
                           {confirmDeleteId === entry.id ? (
                             <>
-                              <span className="text-xs text-red-500">
+                              <span className="text-xs text-red-500 font-semibold flex items-center gap-1">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="inline h-4 w-4 text-red-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
                                 Να καθαριστεί αυτή η εγγραφή;
                               </span>
                               <button
                                 onClick={() => handleDeleteEntry(entry.id)}
-                                className="rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
+                                className="rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 flex items-center gap-1 transition hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
+                                title="Οριστική διαγραφή εγγραφής"
                               >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="inline h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
                                 Καθαρισμός τώρα
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-600 flex items-center gap-1 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                title="Ακύρωση διαγραφής"
                               >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="inline h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
                                 Συνέχεια επεξεργασίας
                               </button>
                             </>
                           ) : (
-                            <button
-                              onClick={() => setConfirmDeleteId(entry.id)}
-                              className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                              title="Καθαρισμός ομιλητή, ομιλίας και σημειώσεων"
-                            >
-                              Καθαρισμός εγγραφής
-                            </button>
+                            <>
+                              <button
+                                onClick={() => setConfirmDeleteId(entry.id)}
+                                className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 flex items-center gap-1 transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                                title="Καθαρισμός ομιλητή, ομιλίας και σημειώσεων"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="inline h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                                Καθαρισμός εγγραφής
+                              </button>
+                              <button
+                                onClick={cancelInlineEdit}
+                                className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 flex items-center gap-1 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                title="Κλείσιμο επεξεργασίας"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="inline h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                                Κλείσιμο
+                              </button>
+                            </>
                           )}
-                          <button
-                            onClick={cancelInlineEdit}
-                            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                            title="Κλείσιμο επεξεργασίας"
-                          >
-                            Κλείσιμο
-                          </button>
                         </div>
                       </div>
 
