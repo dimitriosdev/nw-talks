@@ -21,6 +21,7 @@ export default function AdminTalksPage() {
   const [adding, setAdding] = useState(false);
   const [newIdInput, setNewIdInput] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
