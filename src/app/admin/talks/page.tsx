@@ -289,22 +289,27 @@ export default function AdminTalksPage() {
 
       {/* Category filter dropdown */}
       {categories.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-xs text-blue-600">Κατηγορία:</span>
           <select
             value={categoryFilter || ""}
             onChange={(e) => setCategoryFilter(e.target.value || null)}
-            className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-400/20 text-blue-900 border border-blue-400/30 shadow-sm backdrop-blur transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 hover:bg-blue-400/30 hover:border-blue-400/50"
+            className="rounded-full px-5 py-2 text-sm font-semibold bg-blue-400/20 text-blue-900 border border-blue-400/30 shadow-sm backdrop-blur transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 hover:bg-blue-400/30 hover:border-blue-400/50"
             style={{
-              minHeight: "28px",
-              minWidth: "120px",
+              minHeight: "36px",
+              minWidth: "140px",
               appearance: "none",
               boxShadow: "0 1px 4px 0 rgb(30 64 175 / 0.08)",
+              marginRight: "8px",
             }}
           >
             <option value="">Όλες οι κατηγορίες</option>
             {categories.map((category) => (
-              <option key={category} value={category}>
+              <option
+                key={category}
+                value={category}
+                style={{ padding: "8px 16px", fontSize: "15px", borderRadius: "16px", margin: "4px 0" }}
+              >
                 {category}
               </option>
             ))}
