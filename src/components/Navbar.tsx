@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -128,6 +128,28 @@ export function Navbar() {
   const { language, setLanguage, theme, setTheme, texts } = usePreferences();
   const [mobileOpen, setMobileOpen] = useState(false);
   const onAdminRoute = pathname.startsWith("/admin");
+  const adminDropdownRef = useRef<HTMLDetailsElement>(null);
+  const mobileNavRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      // Admin dropdown
+      if (adminDropdownRef.current && adminDropdownRef.current.open) {
+        if (!adminDropdownRef.current.contains(event.target as Node)) {
+          adminDropdownRef.current.open = false;
+        }
+      }
+      // Mobile nav
+      if (mobileOpen && mobileNavRef.current) {
+        if (!mobileNavRef.current.contains(event.target as Node)) {
+          setMobileOpen(false);
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileOpen]);
 
   const publicLinks = [
     { href: "/", label: texts.nav.schedule },
@@ -212,7 +234,7 @@ export function Navbar() {
           {isAdmin && (
             <>
               <span className="mx-1 h-5 w-px bg-gray-300 dark:bg-gray-600" />
-              <details className="group relative">
+              <details className="group relative" ref={adminDropdownRef}>
                 <summary
                   className={`inline-flex cursor-pointer list-none items-center gap-1 rounded-md px-3 py-1.5 transition-colors whitespace-nowrap ${
                     isActive("/admin")
@@ -376,7 +398,10 @@ export function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          onClick={() => setMobileOpen((o) => !o)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMobileOpen((o) => !o);
+          }}
           className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 md:hidden"
           aria-label={texts.nav.toggleMenu}
         >
