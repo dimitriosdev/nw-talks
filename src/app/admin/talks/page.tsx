@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { getTalks, saveTalk, deleteTalk, importTalks } from "@/lib/firestore";
 import type { Talk } from "@/types";
 import { Spinner } from "@/components/ui/Spinner";
@@ -26,6 +27,8 @@ export default function AdminTalksPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const addRef = useRef<HTMLInputElement>(null);
+
+  const scroll = useScrollPosition("adminTalksScrollY");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,6 +61,7 @@ export default function AdminTalksPage() {
   const openEdit = (t: Talk) => {
     if (editId === t.id) return;
     setAdding(false);
+    scroll.save();
     setEditId(t.id);
     setEditTitle(t.title);
     setEditCategory(t.category ?? "");
@@ -68,6 +72,7 @@ export default function AdminTalksPage() {
     setDeleting(null);
     setEditTitle("");
     setEditCategory("");
+    scroll.restore();
   };
 
   const saveEdit = async () => {

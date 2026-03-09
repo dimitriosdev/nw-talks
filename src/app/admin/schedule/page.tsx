@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 import {
   getScheduleEntries,
   updateScheduleEntry,
@@ -33,6 +34,8 @@ import { usePreferences } from "@/hooks/usePreferences";
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 export default function AdminSchedulePage() {
+  // Scroll position preservation
+  const scroll = useScrollPosition("adminScheduleScrollY");
   const { language } = usePreferences();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -289,9 +292,15 @@ export default function AdminSchedulePage() {
   /* ---------------------------------------------------------------- */
   /*  Inline edit helpers                                              */
   /* ---------------------------------------------------------------- */
+  const [scrollAfterSaveId, setScrollAfterSaveId] = useState<string | null>(
+    null,
+  );
+  const entryRefs = useRef<{ [id: string]: HTMLDivElement | null }>({});
+
   const openInlineEdit = useCallback(
     (entry: ScheduleEntry) => {
       setConfirmDeleteId(null);
+      scroll.save();
       setInlineId(entry.id);
 
       // Speaker
@@ -324,6 +333,16 @@ export default function AdminSchedulePage() {
       setInlineNotes(entry.notes);
       setShowSpeakerDropdown(false);
       setShowTalkDropdown(false);
+
+      // Scroll to the entry element
+      setTimeout(() => {
+        const el =
+          entryRefs.current[entry.id] ||
+          document.getElementById(`schedule-entry-${entry.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 80);
     },
     [speakers, freshTalks],
   );
@@ -334,6 +353,7 @@ export default function AdminSchedulePage() {
     setCreatingNewSpeaker(false);
     setShowSpeakerDropdown(false);
     setShowTalkDropdown(false);
+    scroll.restore();
   };
 
   useEffect(() => {
@@ -351,18 +371,36 @@ export default function AdminSchedulePage() {
   }, [requestedEditId, loading, entries, router, openInlineEdit]);
 
   useEffect(() => {
+    // Deep link scroll
     const targetId = pendingDeepLinkScrollIdRef.current;
-    if (!targetId) return;
-    if (loading) return;
-
-    const timeoutId = window.setTimeout(() => {
-      const row = document.getElementById(`schedule-entry-${targetId}`);
-      row?.scrollIntoView({ behavior: "smooth", block: "start" });
-      pendingDeepLinkScrollIdRef.current = null;
-    }, 80);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [loading, entries, inlineId]);
+    if (targetId && !loading) {
+      const timeoutId = window.setTimeout(() => {
+        const row = document.getElementById(`schedule-entry-${targetId}`);
+        row?.scrollIntoView({ behavior: "smooth", block: "start" });
+        pendingDeepLinkScrollIdRef.current = null;
+      }, 80);
+      return () => window.clearTimeout(timeoutId);
+    }
+    // Robust scroll to edited entry after save
+    if (scrollAfterSaveId && !loading) {
+      let attempts = 0;
+      const maxAttempts = 20;
+      const interval = 50;
+      const scrollToEntry = () => {
+        const ref = entryRefs.current[scrollAfterSaveId];
+        if (ref) {
+          ref.scrollIntoView({ behavior: "smooth", block: "center" });
+          setScrollAfterSaveId(null);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(scrollToEntry, interval);
+        } else {
+          setScrollAfterSaveId(null);
+        }
+      };
+      scrollToEntry();
+    }
+  }, [loading, entries, inlineId, scrollAfterSaveId]);
 
   /* ---------------------------------------------------------------- */
   /*  Handlers                                                         */
@@ -383,6 +421,7 @@ export default function AdminSchedulePage() {
   };
 
   const handleInlineSave = async (skipRedCheck = false) => {
+    // Save scroll position before update (handled by scroll hook if needed)
     if (!inlineId) return;
 
     // Red-talk check on standard talks only
@@ -434,6 +473,7 @@ export default function AdminSchedulePage() {
       notes: inlineNotes,
     });
     toast("success", "Η εγγραφή ενημερώθηκε.");
+    setScrollAfterSaveId(inlineId);
     cancelInlineEdit();
     load();
   };
@@ -698,7 +738,9 @@ export default function AdminSchedulePage() {
           return (
             <div
               key={entry.id}
-              id={`schedule-entry-${entry.id}`}
+              ref={(el) => {
+                entryRefs.current[entry.id] = el;
+              }}
               className="scroll-mt-24"
             >
               {isFirstFuture && (
