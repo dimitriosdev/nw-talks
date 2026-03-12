@@ -11,6 +11,8 @@ export interface Talk {
   title: string;
   /** Category of the talk. */
   category: string;
+  /** Whether the talk was presented via Zoom (true) or physical presence (false). */
+  presentedViaZoom: boolean;
 }
 
 /** A speaker who can be assigned to a scheduled date. */
@@ -48,6 +50,8 @@ export interface ScheduleEntry {
   status: ScheduleStatus;
   /** Optional admin remarks (e.g. "Memorial week — no talk"). */
   notes: string;
+  /** Whether the talk was presented via Zoom (true) or physical presence (false). */
+  presentedViaZoom?: boolean;
 }
 
 /** Global application settings (single doc: settings/global). */

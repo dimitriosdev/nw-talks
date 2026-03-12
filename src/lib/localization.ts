@@ -40,6 +40,8 @@ export const translations = {
       confirmed: "Επιβεβαιωμένη",
       open: "Ανοιχτή",
       cancelled: "Ακυρωμένη",
+      zoom: "Zoom",
+      physical: "Φυσική παρουσία",
     },
     home: {
       title: "Πρόγραμμα",
@@ -165,6 +167,8 @@ export const translations = {
       confirmed: "Confirmed",
       open: "Open",
       cancelled: "Cancelled",
+      zoom: "Zoom",
+      physical: "Physical Presence",
     },
     home: {
       title: "Schedule",

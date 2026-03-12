@@ -8,6 +8,8 @@ import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "@/components/ui/Toast";
 
 export default function AdminTalksPage() {
+  const [editPresentedViaZoom, setEditPresentedViaZoom] = useState(false);
+  const [newPresentedViaZoom, setNewPresentedViaZoom] = useState(false);
   const [talks, setTalks] = useState<Talk[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -59,6 +61,7 @@ export default function AdminTalksPage() {
 
   /* ---- inline edit ---- */
   const openEdit = (t: Talk) => {
+    setEditPresentedViaZoom(t.presentedViaZoom ?? false);
     if (editId === t.id) return;
     setAdding(false);
     scroll.save();
@@ -68,6 +71,7 @@ export default function AdminTalksPage() {
   };
 
   const closeEdit = () => {
+    setEditPresentedViaZoom(false);
     setEditId(null);
     setDeleting(null);
     setEditTitle("");
@@ -86,6 +90,7 @@ export default function AdminTalksPage() {
       id: editId,
       title: editTitle.trim(),
       category: editCategory.trim(),
+      presentedViaZoom: editPresentedViaZoom,
     });
     toast("success", "Η ομιλία ενημερώθηκε.");
     setSaving(false);
@@ -95,6 +100,7 @@ export default function AdminTalksPage() {
 
   /* ---- add new ---- */
   const openAdd = () => {
+    setNewPresentedViaZoom(false);
     setEditId(null);
     setDeleting(null);
     setNewIdInput("");
@@ -103,7 +109,10 @@ export default function AdminTalksPage() {
     setTimeout(() => addRef.current?.focus(), 50);
   };
 
-  const closeAdd = () => setAdding(false);
+  const closeAdd = () => {
+    setAdding(false);
+    setNewPresentedViaZoom(false);
+  };
 
   const normalizeTitle = (title: string) =>
     title.trim().replace(/\s+/g, " ").toLowerCase();
@@ -160,6 +169,7 @@ export default function AdminTalksPage() {
       id: resolvedId,
       title: trimmedTitle,
       category: newCategory.trim(),
+      presentedViaZoom: newPresentedViaZoom,
     });
     toast("success", `Η ομιλία #${resolvedId} προστέθηκε.`);
     setSaving(false);
@@ -202,6 +212,7 @@ export default function AdminTalksPage() {
             id: Number(parts[0].trim()),
             category: parts[1]?.trim() ?? "",
             title: parts[2]?.trim().replace(/^"|"$/g, "") ?? "",
+            presentedViaZoom: false,
           };
         });
       }
@@ -406,6 +417,21 @@ export default function AdminTalksPage() {
                 className={inputCls}
               />
             </div>
+            <div className="flex items-center mt-2">
+              <input
+                type="checkbox"
+                id="newPresentedViaZoom"
+                checked={newPresentedViaZoom}
+                onChange={(e) => setNewPresentedViaZoom(e.target.checked)}
+                className="mr-2"
+              />
+              <label
+                htmlFor="newPresentedViaZoom"
+                className="text-xs text-gray-700 dark:text-gray-300"
+              >
+                Presented via Zoom
+              </label>
+            </div>
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Το ID ομιλίας είναι προαιρετικό. Αφήστε το κενό για ειδικές
@@ -471,6 +497,23 @@ export default function AdminTalksPage() {
                       </option>
                     ))}
                   </select>
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      id="editPresentedViaZoom"
+                      checked={editPresentedViaZoom}
+                      onChange={(e) =>
+                        setEditPresentedViaZoom(e.target.checked)
+                      }
+                      className="mr-2"
+                    />
+                    <label
+                      htmlFor="editPresentedViaZoom"
+                      className="text-xs text-gray-700 dark:text-gray-300"
+                    >
+                      Presented via Zoom
+                    </label>
+                  </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   {/* Delete */}
@@ -523,6 +566,17 @@ export default function AdminTalksPage() {
                     <span className="truncate text-sm font-medium">
                       {t.title}
                     </span>
+                    {typeof t.presentedViaZoom === "boolean" && (
+                      <span
+                        className={
+                          t.presentedViaZoom
+                            ? "ml-2 text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full"
+                            : "ml-2 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full"
+                        }
+                      >
+                        {t.presentedViaZoom ? "Zoom" : "Physical"}
+                      </span>
+                    )}
                   </div>
                   {t.category && (
                     <span className="mt-1 text-xs text-gray-400 dark:text-gray-500">
