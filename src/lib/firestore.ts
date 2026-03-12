@@ -80,6 +80,10 @@ export async function getTalk(id: number): Promise<Talk | null> {
     id: Number(data.id ?? snap.id),
     title: String(data.title ?? ""),
     category: String(data.category ?? ""),
+    presentedViaZoom:
+      typeof data.presentedViaZoom === "boolean"
+        ? data.presentedViaZoom
+        : false,
   };
 }
 
