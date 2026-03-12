@@ -64,7 +64,8 @@ export async function getTalks(): Promise<Talk[]> {
       id: Number(data.id ?? d.id),
       title: String(data.title ?? ""),
       category: String(data.category ?? ""),
-    };
+        presentedViaZoom: typeof data.presentedViaZoom === "boolean" ? data.presentedViaZoom : false,
+      };
   });
 }
 
