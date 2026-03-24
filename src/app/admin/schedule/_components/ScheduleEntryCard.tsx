@@ -30,21 +30,25 @@ export function ScheduleEntryCard({
   const isConfirmed = entry.status === "confirmed";
   const isSpecialTalk = !talk && !!entry.customTalkTitle;
   const displayTitle = talk
-    ? `#${talk.id} — ${talk.title}`
+    ? `${talk.id} — ${talk.title}`
     : entry.customTalkTitle
       ? entry.customTalkTitle
       : "Δεν έχει ανατεθεί ομιλία";
 
+  const needsAttention = (!talk && !entry.customTalkTitle) || !speaker;
   return (
     <div
       onClick={onEdit}
-      className={`group rounded-xl border bg-white px-4 py-3 transition dark:bg-gray-900 ${
-        isCancelled
-          ? "cursor-pointer border-red-200 bg-red-50/40 hover:border-red-300 hover:shadow-sm dark:border-red-900 dark:bg-red-950/20 dark:hover:border-red-700"
-          : isFirstFuture
-            ? "cursor-pointer border-blue-400 bg-blue-50 ring-2 ring-blue-200 hover:border-blue-500 hover:shadow-sm dark:border-blue-600 dark:bg-blue-950 dark:ring-blue-800 dark:hover:border-blue-500"
-            : "cursor-pointer border-gray-200 hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:hover:border-blue-600"
-      }`}
+      className={`group rounded-xl border px-4 py-3 transition
+        ${
+          isCancelled
+            ? "cursor-pointer border-red-200 bg-red-50/40 hover:border-red-300 hover:shadow-sm dark:border-red-900 dark:bg-red-950/20 dark:hover:border-red-700"
+            : needsAttention
+              ? "cursor-pointer border-orange-200 bg-orange-50 hover:border-orange-300 hover:shadow-sm dark:border-orange-900 dark:bg-orange-950/20 dark:hover:border-orange-700"
+              : isFirstFuture
+                ? "cursor-pointer border-blue-400 bg-blue-50 ring-2 ring-blue-200 hover:border-blue-500 hover:shadow-sm dark:border-blue-600 dark:bg-blue-950 dark:ring-blue-800 dark:hover:border-blue-500"
+                : "cursor-pointer border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-600"
+        }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">

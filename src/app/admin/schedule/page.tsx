@@ -655,8 +655,21 @@ export default function AdminSchedulePage() {
           <div className="flex justify-center">
             <a
               href="#today-marker"
-              className="text-xs font-medium text-blue-600 underline-offset-2 transition hover:underline dark:text-blue-400"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 shadow-sm transition hover:border-blue-400 hover:bg-blue-100 hover:shadow-md active:scale-95 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:border-blue-500 dark:hover:bg-blue-900/50"
             >
+              <svg
+                className="h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
               Σήμερα
             </a>
           </div>

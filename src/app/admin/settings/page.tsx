@@ -16,6 +16,11 @@ const defaults: Settings = {
   meetingDay: "Sunday",
   meetingDays: {},
   localCongregation: "",
+  congregationAddress: "",
+  congregationTime: "",
+  zoomUrl: "",
+  zoomMeetingId: "",
+  zoomPassword: "",
   adminEmails: [],
 };
 
@@ -34,6 +39,7 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [showOtherYears, setShowOtherYears] = useState(false);
+  const [showCongregationDetails, setShowCongregationDetails] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -232,7 +238,7 @@ export default function AdminSettingsPage() {
             })()}
           </div>
 
-          <div>
+          <div className="space-y-3">
             <label className="mb-1 block text-sm font-medium">
               {texts.settings.localCongregation}
             </label>
@@ -241,16 +247,136 @@ export default function AdminSettingsPage() {
               placeholder="e.g. Zürich"
               value={settings.localCongregation}
               onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  localCongregation: e.target.value,
-                })
+                setSettings({ ...settings, localCongregation: e.target.value })
               }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            {/* <p className="text-xs text-gray-500">
               {texts.settings.localCongregationHint}
-            </p>
+            </p> */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowCongregationDetails(!showCongregationDetails)
+              }
+              className="flex w-full items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <svg
+                className={`h-3.5 w-3.5 transition-transform ${showCongregationDetails ? "rotate-90" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+              {texts.settings.congregationDetails}
+            </button>
+
+            {showCongregationDetails && (
+              <div className="space-y-3 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    {texts.settings.congregationAddress}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={texts.settings.congregationAddressPlaceholder}
+                    value={settings.congregationAddress ?? ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        congregationAddress: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    {texts.settings.congregationTime}
+                  </label>
+                  <input
+                    type="time"
+                    value={settings.congregationTime ?? ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        congregationTime: e.target.value,
+                      })
+                    }
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    {texts.settings.congregationDayHint}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs font-medium text-gray-500">
+                    {texts.settings.zoomSection}
+                  </p>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-500">
+                        {texts.settings.zoomUrl}
+                      </label>
+                      <input
+                        type="url"
+                        placeholder={texts.settings.zoomUrlPlaceholder}
+                        value={settings.zoomUrl ?? ""}
+                        onChange={(e) =>
+                          setSettings({ ...settings, zoomUrl: e.target.value })
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-gray-500">
+                          {texts.settings.zoomMeetingId}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={texts.settings.zoomMeetingIdPlaceholder}
+                          value={settings.zoomMeetingId ?? ""}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              zoomMeetingId: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-gray-500">
+                          {texts.settings.zoomPassword}
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={texts.settings.zoomPasswordPlaceholder}
+                          value={settings.zoomPassword ?? ""}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              zoomPassword: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

@@ -405,24 +405,24 @@ export default function AdminSpeakersPage() {
                   </span>
                   <button
                     onClick={closeEdit}
-                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
-                    title="Ακύρωση επεξεργασίας (Esc)"
+                    className="rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                    title="Κλείσιμο επεξεργασίας (Esc)"
+                    aria-label="Κλείσιμο"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="inline h-4 w-4"
+                      className="h-4 w-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
+                      strokeWidth={2}
                     >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
                         d="M6 18L18 6M6 6l12 12"
                       />
                     </svg>
-                    Esc για ακύρωση
                   </button>
                 </div>
                 <div
@@ -502,9 +502,24 @@ export default function AdminSpeakersPage() {
                   ) : (
                     <button
                       onClick={() => setDeleting(s.id)}
-                      className="text-xs text-gray-400 hover:text-red-500"
+                      className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:text-gray-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                      title="Διαγραφή ομιλητή"
                     >
-                      Διαγραφή ομιλητή
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Διαγραφή
                     </button>
                   )}
                   <div className="flex items-center gap-2">

@@ -35,6 +35,9 @@ export const translations = {
       save: "Αποθήκευση",
       saving: "Αποθήκευση...",
       noResults: "Δεν βρέθηκαν αποτελέσματα",
+      whatsappNotify: "WhatsApp",
+      whatsappReminderGreeting:
+        "Αγαπητέ {name},\n\nΣας υπενθυμίζουμε για την ομιλία σας:",
     },
     status: {
       confirmed: "Επιβεβαιωμένη",
@@ -122,6 +125,20 @@ export const translations = {
       localCongregation: "Τοπική εκκλησία",
       localCongregationHint:
         "Οι ομιλητές των οποίων η εκκλησία ταιριάζει με αυτή την τιμή θεωρούνται τοπικοί.",
+      congregationDetails: "Λεπτομέρειες εκκλησίας",
+      congregationAddress: "Διεύθυνση εκκλησίας",
+      congregationAddressPlaceholder: "π.χ. Λεωφ. Αθηνών 12, Αθήνα",
+      congregationTime: "Ώρα συνάθροισης",
+      congregationTimePlaceholder: "π.χ. 10:00",
+      congregationDayHint:
+        "Η ημέρα συνάθροισης προκύπτει από τη ρύθμιση ημέρας Σαββατοκύριακου παραπάνω.",
+      zoomSection: "Zoom",
+      zoomUrl: "Σύνδεσμος Zoom",
+      zoomUrlPlaceholder: "https://zoom.us/j/...",
+      zoomMeetingId: "ID συνάντησης Zoom",
+      zoomMeetingIdPlaceholder: "π.χ. 123 456 7890",
+      zoomPassword: "Κωδικός Zoom",
+      zoomPasswordPlaceholder: "κωδικός πρόσβασης",
       adminEmails: "Email διαχειριστών",
       add: "Προσθήκη",
       noAdminEmails:
@@ -162,6 +179,9 @@ export const translations = {
       save: "Save",
       saving: "Saving...",
       noResults: "No results",
+      whatsappNotify: "WhatsApp",
+      whatsappReminderGreeting:
+        "Dear {name},\n\nThis is a reminder about your assigned talk:",
     },
     status: {
       confirmed: "Confirmed",
@@ -248,6 +268,20 @@ export const translations = {
       localCongregation: "Local Congregation",
       localCongregationHint:
         "Speakers whose congregation matches this name are considered local.",
+      congregationDetails: "Congregation details",
+      congregationAddress: "Congregation Address",
+      congregationAddressPlaceholder: "e.g. 12 Main St, Athens",
+      congregationTime: "Meeting Time",
+      congregationTimePlaceholder: "e.g. 10:00",
+      congregationDayHint:
+        "The meeting day is derived from the Weekend Meeting Day setting above.",
+      zoomSection: "Zoom",
+      zoomUrl: "Zoom URL",
+      zoomUrlPlaceholder: "https://zoom.us/j/...",
+      zoomMeetingId: "Zoom Meeting ID",
+      zoomMeetingIdPlaceholder: "e.g. 123 456 7890",
+      zoomPassword: "Zoom Password",
+      zoomPasswordPlaceholder: "meeting password",
       adminEmails: "Admin Emails",
       add: "Add",
       noAdminEmails:

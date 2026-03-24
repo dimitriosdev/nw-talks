@@ -64,6 +64,16 @@ export interface Settings {
   meetingDays?: Record<string, "Saturday" | "Sunday">;
   /** Name of the local / home congregation (e.g. "Zürich"). */
   localCongregation: string;
+  /** Street address of the local congregation hall. */
+  congregationAddress?: string;
+  /** Time of the weekend meeting, e.g. "10:00". */
+  congregationTime?: string;
+  /** Zoom meeting URL for online attendees. */
+  zoomUrl?: string;
+  /** Zoom meeting ID. */
+  zoomMeetingId?: string;
+  /** Zoom meeting password. */
+  zoomPassword?: string;
   /** Google emails that are allowed admin access. */
   adminEmails: string[];
 }

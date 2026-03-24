@@ -210,47 +210,49 @@ export function ScheduleEntryInlineEdit({
               </>
             ) : (
               <>
+                {/* Destructive: clear entry — trash icon + label, red on hover */}
                 <button
                   onClick={() => onSetConfirmDeleteId(entry.id)}
-                  className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 flex items-center gap-1 transition hover:bg-red-50 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                  className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:text-gray-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                   title="Καθαρισμός ομιλητή, ομιλίας και σημειώσεων"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="inline h-4 w-4"
+                    className="h-3.5 w-3.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    strokeWidth={2}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
-                  Καθαρισμός εγγραφής
+                  Καθαρισμός
                 </button>
+                {/* Neutral: close — icon only */}
                 <button
                   onClick={onCancel}
-                  className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 flex items-center gap-1 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  className="rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                   title="Κλείσιμο επεξεργασίας"
+                  aria-label="Κλείσιμο"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="inline h-4 w-4"
+                    className="h-4 w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    strokeWidth={2}
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
                       d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                  Κλείσιμο
                 </button>
               </>
             )}
@@ -567,14 +569,14 @@ export function ScheduleEntryInlineEdit({
             role="switch"
             aria-checked={inlinePresentedViaZoom}
             onClick={() => setInlinePresentedViaZoom(!inlinePresentedViaZoom)}
-            className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${inlinePresentedViaZoom ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600"}`}
+            className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${inlinePresentedViaZoom ? "bg-blue-500" : "bg-emerald-500"}`}
           >
             <span
               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${inlinePresentedViaZoom ? "translate-x-4" : "translate-x-0"}`}
             />
           </button>
           <span
-            className={`text-sm font-medium ${inlinePresentedViaZoom ? "text-blue-600 dark:text-blue-400" : "text-gray-400"}`}
+            className={`text-sm font-medium ${inlinePresentedViaZoom ? "text-blue-600 dark:text-blue-400" : "text-emerald-500"}`}
           >
             {inlinePresentedViaZoom ? zoomLabel : physicalLabel}
           </span>

@@ -4,11 +4,12 @@ import { useSchedule } from "@/hooks/useSchedule";
 import { ScheduleCard } from "@/components/schedule/ScheduleCard";
 import { SkeletonCard } from "@/components/ui/Spinner";
 import { useState, useEffect, useRef } from "react";
-import { getScheduleYears } from "@/lib/firestore";
+import { getScheduleYears, getSettings } from "@/lib/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { usePreferences } from "@/hooks/usePreferences";
 import { formatText } from "@/lib/localization";
+import type { Settings } from "@/types";
 
 export default function HomePage() {
   const MIN_SCHEDULE_YEAR = 2023;
@@ -19,8 +20,15 @@ export default function HomePage() {
   const { isAdmin } = useAuth();
   const { texts } = usePreferences();
   const router = useRouter();
+  const [settings, setSettings] = useState<Settings | null>(null);
 
   const { entries, loading } = useSchedule(selectedYear);
+
+  useEffect(() => {
+    if (isAdmin) {
+      getSettings().then(setSettings);
+    }
+  }, [isAdmin]);
   const todayRef = useRef<HTMLDivElement>(null);
 
   // Load available years from Firestore
@@ -116,6 +124,7 @@ export default function HomePage() {
                   <ScheduleCard
                     entry={entry}
                     highlight={isFirstFuture}
+                    settings={isAdmin && settings ? settings : undefined}
                     onTitleClick={
                       isAdmin
                         ? () =>
