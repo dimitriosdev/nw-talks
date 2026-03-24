@@ -12,6 +12,10 @@ interface TalkListProps {
   filter?: FreshnessLevel | "scheduled" | null;
   /** When set, only talks of this category are shown. */
   categoryFilter?: string | null;
+  /** When true, shows an edit button on each card. */
+  isAdmin?: boolean;
+  /** Called when admin clicks the edit button on a card. */
+  onEdit?: (talk: TalkWithFreshness) => void;
 }
 
 interface FreshnessDisplayConfig {
@@ -31,6 +35,8 @@ export function TalkList({
   talks,
   filter = null,
   categoryFilter = null,
+  isAdmin = false,
+  onEdit,
 }: TalkListProps) {
   const { texts, language } = usePreferences();
   const [search, setSearch] = useState("");
@@ -213,7 +219,12 @@ export function TalkList({
         /* Flat grid sorted by number (no filter active) */
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {grouped.flat.map((talk) => (
-            <TalkCard key={talk.id} talk={talk} />
+            <TalkCard
+              key={talk.id}
+              talk={talk}
+              isAdmin={isAdmin}
+              onEdit={onEdit}
+            />
           ))}
         </div>
       ) : (
@@ -242,7 +253,12 @@ export function TalkList({
                 )}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((talk) => (
-                    <TalkCard key={talk.id} talk={talk} />
+                    <TalkCard
+                      key={talk.id}
+                      talk={talk}
+                      isAdmin={isAdmin}
+                      onEdit={onEdit}
+                    />
                   ))}
                 </div>
               </section>
@@ -257,7 +273,15 @@ export function TalkList({
 /* ------------------------------------------------------------------ */
 /*  Memoised expandable card for a single talk                        */
 /* ------------------------------------------------------------------ */
-const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
+const TalkCard = memo(function TalkCard({
+  talk,
+  isAdmin,
+  onEdit,
+}: {
+  talk: TalkWithFreshness;
+  isAdmin?: boolean;
+  onEdit?: (talk: TalkWithFreshness) => void;
+}) {
   const { texts, language } = usePreferences();
   const [open, setOpen] = useState(false);
   const count = talk.presentations.length;
@@ -341,6 +365,33 @@ const TalkCard = memo(function TalkCard({ talk }: { talk: TalkWithFreshness }) {
     >
       {/* Freshness accent bar */}
       <div className={`absolute left-0 top-0 h-full w-1 ${cfg.bar}`} />
+
+      {/* Admin edit button */}
+      {isAdmin && onEdit && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(talk);
+          }}
+          className="absolute right-3 top-3 z-10 rounded-lg bg-blue-500/90 p-2 text-white shadow-md transition-all hover:bg-blue-600 dark:hover:bg-blue-700"
+          title="Επεξεργασία ομιλίας"
+        >
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+            />
+          </svg>
+        </button>
+      )}
 
       <button
         type="button"

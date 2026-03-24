@@ -8,15 +8,11 @@ export interface InlineEditFormProps {
   entry: ScheduleEntry;
   dateLocale: Locale;
   inputCls: string;
-
-  /* delete/cancel/save */
   confirmDeleteId: string | null;
   onSetConfirmDeleteId: (id: string | null) => void;
   onDelete: (id: string) => void;
   onCancel: () => void;
   onSave: () => void;
-
-  /* speaker autocomplete */
   speakerQuery: string;
   setSpeakerQuery: (q: string) => void;
   selectedSpeakerId: string | null;
@@ -33,8 +29,6 @@ export interface InlineEditFormProps {
   goToSpeakerEditor: (speakerId: string | null, entryId: string) => void;
   normalizeTel: (phone: string) => string;
   normalizeWhatsApp: (phone: string) => string;
-
-  /* new speaker inline creation */
   creatingNewSpeaker: boolean;
   setCreatingNewSpeaker: (b: boolean) => void;
   newFirstName: string;
@@ -45,8 +39,6 @@ export interface InlineEditFormProps {
   setNewCongregation: (v: string) => void;
   newPhone: string;
   setNewPhone: (v: string) => void;
-
-  /* talk autocomplete */
   talkQuery: string;
   setTalkQuery: (q: string) => void;
   selectedTalkId: number | null;
@@ -62,16 +54,12 @@ export interface InlineEditFormProps {
   onClearTalk: () => void;
   onCommitCustomTalk: () => void;
   freshnessIcon: (level: string) => string;
-
-  /* toggles and notes */
   inlineConfirmed: boolean;
   setInlineConfirmed: (v: boolean) => void;
   inlinePresentedViaZoom: boolean;
   setInlinePresentedViaZoom: (v: boolean) => void;
   inlineNotes: string;
   setInlineNotes: (v: string) => void;
-
-  /* localized labels */
   zoomLabel: string;
   physicalLabel: string;
 }
@@ -138,7 +126,6 @@ export function ScheduleEntryInlineEdit({
   return (
     <div className="rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30">
       <div className="space-y-3">
-        {/* Header: date + clear/close actions */}
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-gray-500">
             {format(parseISO(entry.date), "EEEE, d MMMM yyyy", {
@@ -210,7 +197,6 @@ export function ScheduleEntryInlineEdit({
               </>
             ) : (
               <>
-                {/* Destructive: clear entry — trash icon + label, red on hover */}
                 <button
                   onClick={() => onSetConfirmDeleteId(entry.id)}
                   className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-gray-400 transition hover:bg-red-50 hover:text-red-500 dark:text-gray-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
@@ -232,7 +218,6 @@ export function ScheduleEntryInlineEdit({
                   </svg>
                   Καθαρισμός
                 </button>
-                {/* Neutral: close — icon only */}
                 <button
                   onClick={onCancel}
                   className="rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
@@ -259,7 +244,6 @@ export function ScheduleEntryInlineEdit({
           </div>
         </div>
 
-        {/* Speaker — unified autocomplete */}
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-500">
             Ομιλητής
@@ -278,9 +262,7 @@ export function ScheduleEntryInlineEdit({
                 }}
                 onFocus={() => setShowSpeakerDropdown(true)}
                 onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setShowSpeakerDropdown(false);
-                  }
+                  if (e.key === "Escape") setShowSpeakerDropdown(false);
                 }}
                 className={inputCls}
               />
@@ -303,11 +285,7 @@ export function ScheduleEntryInlineEdit({
                       key={s.id}
                       type="button"
                       onClick={() => onSelectSpeaker(s)}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-blue-50 dark:hover:bg-blue-900/30 ${
-                        selectedSpeakerId === s.id
-                          ? "bg-blue-50 dark:bg-blue-900/30"
-                          : ""
-                      }`}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-blue-50 dark:hover:bg-blue-900/30 ${selectedSpeakerId === s.id ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
                     >
                       <span>
                         <span className="font-medium">{s.lastName}</span>{" "}
@@ -318,7 +296,6 @@ export function ScheduleEntryInlineEdit({
                       </span>
                     </button>
                   ))}
-                  {/* Add new speaker option */}
                   <button
                     type="button"
                     onClick={onStartNewSpeaker}
@@ -345,7 +322,6 @@ export function ScheduleEntryInlineEdit({
               )}
             </div>
           ) : (
-            /* New speaker inline form */
             <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-950">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
@@ -394,7 +370,6 @@ export function ScheduleEntryInlineEdit({
           {selectedSpeaker && !creatingNewSpeaker && (
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>Τηλέφωνο: {selectedSpeaker.phone || "Μη διαθέσιμο"}</span>
-
               <button
                 type="button"
                 onClick={() => goToSpeakerEditor(selectedSpeaker.id, entry.id)}
@@ -403,7 +378,6 @@ export function ScheduleEntryInlineEdit({
               >
                 Επεξεργασία στοιχείων
               </button>
-
               {normalizeTel(selectedSpeaker.phone) && (
                 <a
                   href={`tel:${normalizeTel(selectedSpeaker.phone)}`}
@@ -425,7 +399,6 @@ export function ScheduleEntryInlineEdit({
                   </svg>
                 </a>
               )}
-
               {normalizeWhatsApp(selectedSpeaker.phone) && (
                 <a
                   href={`https://wa.me/${normalizeWhatsApp(selectedSpeaker.phone)}`}
@@ -449,7 +422,6 @@ export function ScheduleEntryInlineEdit({
           )}
         </div>
 
-        {/* Talk — unified autocomplete + custom title */}
         <div>
           <label className="mb-1 block text-xs font-medium text-gray-500">
             Ομιλία
@@ -471,12 +443,8 @@ export function ScheduleEntryInlineEdit({
                 setTimeout(() => onCommitCustomTalk(), 150);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setShowTalkDropdown(false);
-                }
-                if (e.key === "Enter") {
-                  onCommitCustomTalk();
-                }
+                if (e.key === "Escape") setShowTalkDropdown(false);
+                if (e.key === "Enter") onCommitCustomTalk();
               }}
               className={inputCls}
             />
@@ -499,11 +467,7 @@ export function ScheduleEntryInlineEdit({
                     key={t.id}
                     type="button"
                     onClick={() => onSelectTalk(t)}
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-blue-50 dark:hover:bg-blue-900/30 ${
-                      selectedTalkId === t.id
-                        ? "bg-blue-50 dark:bg-blue-900/30"
-                        : ""
-                    }`}
+                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-blue-50 dark:hover:bg-blue-900/30 ${selectedTalkId === t.id ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
                   >
                     <span>
                       <span className="mr-1.5">
@@ -519,7 +483,6 @@ export function ScheduleEntryInlineEdit({
                     Δεν βρέθηκαν αντίστοιχες ομιλίες.
                   </div>
                 )}
-                {/* Use as special talk option */}
                 {talkQuery.trim() && !selectedTalkId && (
                   <button
                     type="button"
@@ -549,7 +512,6 @@ export function ScheduleEntryInlineEdit({
               </div>
             )}
           </div>
-          {/* Indicator for what's selected */}
           {selectedTalkId && (
             <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
               Επιλέχθηκε κανονική ομιλία
@@ -562,7 +524,6 @@ export function ScheduleEntryInlineEdit({
           )}
         </div>
 
-        {/* Presented via Zoom toggle */}
         <div className="flex items-center gap-3 mt-2">
           <button
             type="button"
@@ -582,37 +543,25 @@ export function ScheduleEntryInlineEdit({
           </span>
         </div>
 
-        {/* Confirmed toggle */}
         <div className="flex items-center gap-3">
           <button
             type="button"
             role="switch"
             aria-checked={inlineConfirmed}
             onClick={() => setInlineConfirmed(!inlineConfirmed)}
-            className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
-              inlineConfirmed
-                ? "bg-emerald-500"
-                : "bg-gray-300 dark:bg-gray-600"
-            }`}
+            className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${inlineConfirmed ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                inlineConfirmed ? "translate-x-4" : "translate-x-0"
-              }`}
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${inlineConfirmed ? "translate-x-4" : "translate-x-0"}`}
             />
           </button>
           <span
-            className={`text-sm font-medium ${
-              inlineConfirmed
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-gray-400"
-            }`}
+            className={`text-sm font-medium ${inlineConfirmed ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}
           >
             {inlineConfirmed ? "✓ Επιβεβαιωμένο" : "Δεν έχει επιβεβαιωθεί"}
           </span>
         </div>
 
-        {/* Notes */}
         <div>
           <input
             type="text"
@@ -627,7 +576,6 @@ export function ScheduleEntryInlineEdit({
           />
         </div>
 
-        {/* Save */}
         <div className="flex justify-end">
           <button
             onClick={onSave}

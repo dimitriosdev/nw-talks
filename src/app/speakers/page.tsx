@@ -24,19 +24,17 @@ const emptySpeaker: Omit<Speaker, "id"> = {
   availableTalks: [],
 };
 
-/** Normalise phone to digits-only for tel: / WhatsApp links. */
 function phoneDigits(phone: string) {
   return phone.replace(/[^+\d]/g, "");
 }
 
-/** A single past presentation record for a speaker. */
 interface SpeakerHistory {
   date: string;
   talkId: number;
   talkTitle: string;
 }
 
-export default function AdminSpeakersPage() {
+export default function SpeakersPage() {
   const { language } = usePreferences();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -73,7 +71,6 @@ export default function AdminSpeakersPage() {
     load();
   }, [load]);
 
-  /* ---- history map: speakerId → presentations (newest-first) ---- */
   const historyMap = useMemo(() => {
     const map = new Map<string, SpeakerHistory[]>();
     for (const e of schedule) {
@@ -87,14 +84,12 @@ export default function AdminSpeakersPage() {
       });
       map.set(e.speakerId, list);
     }
-    // sort each list newest-first
     for (const list of map.values()) {
       list.sort((a, b) => b.date.localeCompare(a.date));
     }
     return map;
   }, [schedule, talkMap]);
 
-  /* ---- search ---- */
   const filtered = useMemo(() => {
     if (!search.trim()) return speakers;
     const q = search.toLowerCase();
@@ -108,7 +103,6 @@ export default function AdminSpeakersPage() {
     );
   }, [speakers, search]);
 
-  /* ---- inline edit ---- */
   const openEdit = useCallback(
     (s: Speaker) => {
       if (editId === s.id) return;
@@ -149,7 +143,7 @@ export default function AdminSpeakersPage() {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
 
-      router.replace("/admin/speakers", { scroll: false });
+      router.replace("/speakers", { scroll: false });
     }, 50);
 
     return () => window.clearTimeout(timer);
@@ -174,7 +168,6 @@ export default function AdminSpeakersPage() {
     load();
   };
 
-  /* ---- add new ---- */
   const openAdd = () => {
     setEditId(null);
     setDeleting(null);
@@ -199,7 +192,6 @@ export default function AdminSpeakersPage() {
     load();
   };
 
-  /* ---- delete ---- */
   const confirmDelete = async (id: string) => {
     if (saving) return;
     setSaving(true);
@@ -224,7 +216,6 @@ export default function AdminSpeakersPage() {
     load();
   };
 
-  /* ---- shared classes ---- */
   const inputCls =
     "w-full rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 dark:border-gray-700 dark:focus:border-blue-500";
   const rowCls =
@@ -233,7 +224,6 @@ export default function AdminSpeakersPage() {
     "rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30";
   const dateLocale = language === "el" ? el : enUS;
 
-  /* ---- key handlers ---- */
   const handleEditKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) saveEdit();
     if (e.key === "Escape") closeEdit();
@@ -253,7 +243,6 @@ export default function AdminSpeakersPage() {
 
   return (
     <div className="space-y-3">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
           Ομιλητές{" "}
@@ -281,7 +270,6 @@ export default function AdminSpeakersPage() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <svg
           className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
@@ -305,7 +293,6 @@ export default function AdminSpeakersPage() {
         />
       </div>
 
-      {/* Add row */}
       {adding && (
         <div className={editRowCls}>
           <div className="mb-2 flex items-center justify-between">
@@ -382,7 +369,6 @@ export default function AdminSpeakersPage() {
         </div>
       )}
 
-      {/* Empty state */}
       {filtered.length === 0 && !adding && (
         <p className="py-12 text-center text-sm text-gray-400">
           {search
@@ -391,7 +377,6 @@ export default function AdminSpeakersPage() {
         </p>
       )}
 
-      {/* List */}
       <div className="space-y-1.5">
         {filtered.map((s) => {
           const isEditing = editId === s.id;
@@ -480,7 +465,6 @@ export default function AdminSpeakersPage() {
                   />
                 </div>
                 <div className="mt-3 flex items-center justify-between">
-                  {/* Delete */}
                   {deleting === s.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-red-500">
@@ -523,7 +507,6 @@ export default function AdminSpeakersPage() {
                     </button>
                   )}
                   <div className="flex items-center gap-2">
-                    {/* Phone actions in edit mode */}
                     {editData.phone && (
                       <>
                         <a
@@ -571,7 +554,6 @@ export default function AdminSpeakersPage() {
                     </button>
                   </div>
                 </div>
-                {/* History in edit view */}
                 {(historyMap.get(s.id)?.length ?? 0) > 0 && (
                   <div className="mt-3 border-t border-gray-200 pt-2 dark:border-gray-700">
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
@@ -633,7 +615,6 @@ export default function AdminSpeakersPage() {
                     )}
                   </div>
                 </div>
-                {/* Phone action buttons */}
                 {s.phone && (
                   <div
                     className="mr-2 flex items-center gap-1.5"
@@ -689,7 +670,6 @@ export default function AdminSpeakersPage() {
                   />
                 </svg>
               </div>
-              {/* Inline history toggle */}
               {(historyMap.get(s.id)?.length ?? 0) > 0 && (
                 <div className="mt-1.5">
                   <button

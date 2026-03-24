@@ -24,7 +24,6 @@ const defaults: Settings = {
   adminEmails: [],
 };
 
-/** Get the meeting day for a given year from settings. */
 function getDayForYear(
   year: number,
   settings: Settings,
@@ -32,7 +31,7 @@ function getDayForYear(
   return settings.meetingDays?.[String(year)] ?? settings.meetingDay;
 }
 
-export default function AdminSettingsPage() {
+export default function SettingsPage() {
   const { texts } = usePreferences();
   const [settings, setSettings] = useState<Settings>(defaults);
   const [loading, setLoading] = useState(true);
@@ -251,9 +250,6 @@ export default function AdminSettingsPage() {
               }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
             />
-            {/* <p className="text-xs text-gray-500">
-              {texts.settings.localCongregationHint}
-            </p> */}
 
             <button
               type="button"

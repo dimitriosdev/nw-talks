@@ -27,7 +27,7 @@ export default function LoginPage() {
   if (user) {
     // Already logged in — redirect
     isAdmin(user.email).then((admin) => {
-      router.replace(admin ? "/admin" : "/");
+      router.replace("/");
     });
     return (
       <div className="flex items-center justify-center py-24">
@@ -42,7 +42,7 @@ export default function LoginPage() {
     try {
       const u = await signInWithGoogle();
       const admin = await isAdmin(u.email);
-      router.replace(admin ? "/admin" : "/");
+      router.replace("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : texts.login.signInFailed);
     } finally {

@@ -2,7 +2,7 @@
 
 **Public talk schedule manager for congregations.**
 
-Mobile-first web app for managing weekend public talks with automatic freshness tracking, bilingual support (English/Greek), and distinct admin/public views.
+Mobile-first web app for managing weekend public talks with automatic freshness tracking, bilingual support (English/Greek), and role-based admin controls.
 
 ---
 
@@ -60,7 +60,7 @@ node scripts/seed.mjs
 - **Freshness Tracking:** Color-coded system (green/orange/red) based on months since last presentation
 - **Bilingual:** English/Greek localization with instant switching
 - **Schedule Management:** Auto-generate yearly schedules based on meeting day
-- **Role-Based Access:** Admin (Google auth) vs. public (read-only)
+- **Role-Based Access:** Admin-only management areas with public schedule visibility
 - **Mobile-First:** Optimized for phones and tablets
 
 ---
@@ -69,7 +69,7 @@ node scripts/seed.mjs
 
 ```
 src/
-├── app/              # Next.js routes (public + admin)
+├── app/              # Next.js flat routes
 ├── components/       # React components
 │   ├── ui/          # Reusable UI primitives
 │   └── schedule/    # Schedule-specific components
@@ -107,17 +107,14 @@ scripts/             # Data seeding & migrations
 
 ## Routes
 
-| Path              | Access | Description                |
-| ----------------- | ------ | -------------------------- |
-| `/`               | Public | Upcoming schedule          |
-| `/talks`          | Public | Searchable talk gallery    |
-| `/past`           | Public | Past presentations archive |
-| `/login`          | Public | Google sign-in             |
-| `/admin`          | Admin  | Dashboard                  |
-| `/admin/schedule` | Admin  | Schedule editor            |
-| `/admin/speakers` | Admin  | Speaker management         |
-| `/admin/talks`    | Admin  | Talk library + import      |
-| `/admin/settings` | Admin  | Year, meeting day, admins  |
+| Path        | Access | Description                                      |
+| ----------- | ------ | ------------------------------------------------ |
+| `/`         | Public | Upcoming schedule (admin can edit)               |
+| `/talks`    | Public | Searchable talk gallery                          |
+| `/past`     | Public | Past presentations archive                       |
+| `/login`    | Public | Google sign-in                                   |
+| `/speakers` | Admin  | Speaker management                               |
+| `/settings` | Admin  | Year, meeting day, congregation and admin emails |
 
 ---
 

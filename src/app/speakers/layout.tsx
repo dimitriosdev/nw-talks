@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Spinner } from "@/components/ui/Spinner";
 
-export default function AdminLayout({
+export default function SpeakersLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -14,8 +14,13 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!loading && !user) {
       router.replace("/login");
+      return;
+    }
+
+    if (!loading && user && !isAdmin) {
+      router.replace("/");
     }
   }, [user, isAdmin, loading, router]);
 
@@ -28,8 +33,8 @@ export default function AdminLayout({
   }
 
   if (!user || !isAdmin) {
-    return null; // Will redirect
+    return null;
   }
 
-  return <div>{children}</div>;
+  return <>{children}</>;
 }
