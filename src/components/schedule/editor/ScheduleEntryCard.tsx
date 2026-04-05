@@ -60,12 +60,12 @@ export function ScheduleEntryCard({
               ? "cursor-pointer border-orange-200 bg-orange-50 hover:border-orange-300 hover:shadow-sm dark:border-orange-900 dark:bg-orange-950/20 dark:hover:border-orange-700"
               : isFirstFuture
                 ? "cursor-pointer border-blue-400 bg-blue-50 ring-2 ring-blue-200 hover:border-blue-500 hover:shadow-sm dark:border-blue-600 dark:bg-blue-950 dark:ring-blue-800 dark:hover:border-blue-500"
-                : "cursor-pointer border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-600"
+                : "cursor-pointer border-l-4 border-l-violet-400 border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm dark:border-l-violet-500 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-600"
         }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm font-medium text-violet-600 dark:text-violet-400">
             {format(parseISO(entry.date), "EEEE, d MMMM yyyy", {
               locale: dateLocale,
             })}
