@@ -66,13 +66,21 @@ export function computeFreshness(
     presentationsMap.set(entry.talkId, list);
   }
 
-  // Build a map of talkId → next scheduled date (future only, any status)
-  const futureScheduleMap = new Map<number, string>();
+  // Build a map of talkId → next scheduled date and speaker (future only, any status)
+  const futureScheduleMap = new Map<
+    number,
+    { date: string; speaker: Speaker | null }
+  >();
   for (const entry of futureEntries) {
     if (entry.talkId === null) continue;
     const currentNext = futureScheduleMap.get(entry.talkId);
-    if (!currentNext || entry.date < currentNext) {
-      futureScheduleMap.set(entry.talkId, entry.date);
+    if (!currentNext || entry.date < currentNext.date) {
+      futureScheduleMap.set(entry.talkId, {
+        date: entry.date,
+        speaker: entry.speakerId
+          ? (speakerMap.get(entry.speakerId) ?? null)
+          : null,
+      });
     }
   }
 
@@ -93,7 +101,8 @@ export function computeFreshness(
     const isFresh = freshnessLevel === "green";
 
     // Check if this talk is scheduled for a future date
-    const nextScheduledDate = futureScheduleMap.get(talk.id) ?? null;
+    const nextScheduled = futureScheduleMap.get(talk.id);
+    const nextScheduledDate = nextScheduled?.date ?? null;
     const isScheduledForFuture = nextScheduledDate !== null;
 
     return {
@@ -105,6 +114,7 @@ export function computeFreshness(
       monthsSincePresented,
       isScheduledForFuture,
       nextScheduledDate,
+      nextScheduledSpeaker: nextScheduled?.speaker ?? null,
     };
   });
 }

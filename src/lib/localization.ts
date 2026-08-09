@@ -97,6 +97,7 @@ export const translations = {
       scheduledDescription: "Θα παρουσιαστεί σύντομα - μη διαθέσιμη",
       notAvailable: "Μη διαθέσιμη",
       scheduledFor: "Προγρ.:",
+      scheduledPresenter: "Ομιλητής:",
     },
     login: {
       title: "Σύνδεση Διαχείρισης",
@@ -240,6 +241,7 @@ export const translations = {
       scheduledDescription: "Will be presented soon - not available",
       notAvailable: "Not available",
       scheduledFor: "Sched.:",
+      scheduledPresenter: "Presenter:",
     },
     login: {
       title: "Admin Sign In",

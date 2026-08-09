@@ -114,6 +114,8 @@ export interface TalkWithFreshness extends Talk {
   isScheduledForFuture: boolean;
   /** The next scheduled date for this talk, or `null` if not scheduled. */
   nextScheduledDate: string | null;
+  /** The speaker assigned to the next scheduled presentation, or `null`. */
+  nextScheduledSpeaker: Speaker | null;
 }
 
 /** A schedule entry joined with its related speaker & talk data. */

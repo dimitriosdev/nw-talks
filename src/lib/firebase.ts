@@ -11,7 +11,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+function validateFirebaseConfig() {
+  const missing = Object.entries(firebaseConfig)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Firebase configuration is incomplete. Set these environment variables: ${missing.join(", ")}`,
+    );
+  }
+}
+
 function getFirebaseApp(): FirebaseApp {
+  validateFirebaseConfig();
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
 
