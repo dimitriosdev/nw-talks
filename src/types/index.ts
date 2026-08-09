@@ -116,6 +116,12 @@ export interface TalkWithFreshness extends Talk {
   nextScheduledDate: string | null;
   /** The speaker assigned to the next scheduled presentation, or `null`. */
   nextScheduledSpeaker: Speaker | null;
+  /** Whether this talk has a retirement notice attached to it. */
+  isRetired: boolean;
+  /** The effective date of the retirement notice, or `null` when active. */
+  retirementEffectiveDate: string | null;
+  /** The retirement notice id that applies to this talk, or `null`. */
+  retirementNoticeId: string | null;
 }
 
 /** A schedule entry joined with its related speaker & talk data. */

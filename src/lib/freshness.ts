@@ -7,6 +7,7 @@ import type {
   Talk,
   TalkWithFreshness,
 } from "@/types";
+import { getTalkRetirementNotice } from "@/lib/talkRetirements";
 
 /**
  * Classify a talk into one of three freshness tiers based on how many
@@ -95,10 +96,13 @@ export function computeFreshness(
       ? differenceInMonths(referenceDate, parseISO(lastDate))
       : null;
 
-    const freshnessLevel = classifyFreshness(monthsSincePresented);
+    const retirementNotice = getTalkRetirementNotice(talk.id);
+    const freshnessLevel = retirementNotice
+      ? "red"
+      : classifyFreshness(monthsSincePresented);
 
     // Legacy boolean: true when green
-    const isFresh = freshnessLevel === "green";
+    const isFresh = freshnessLevel === "green" && retirementNotice === null;
 
     // Check if this talk is scheduled for a future date
     const nextScheduled = futureScheduleMap.get(talk.id);
@@ -115,6 +119,9 @@ export function computeFreshness(
       isScheduledForFuture,
       nextScheduledDate,
       nextScheduledSpeaker: nextScheduled?.speaker ?? null,
+      isRetired: retirementNotice !== null,
+      retirementEffectiveDate: retirementNotice?.effectiveDate ?? null,
+      retirementNoticeId: retirementNotice?.id ?? null,
     };
   });
 }

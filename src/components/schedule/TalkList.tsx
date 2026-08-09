@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, memo } from "react";
 import type { FreshnessLevel, TalkWithFreshness } from "@/types";
 import { usePreferences } from "@/hooks/usePreferences";
+import { formatText } from "@/lib/localization";
 import { format, parseISO } from "date-fns";
 import { el, enUS } from "date-fns/locale";
 
@@ -10,8 +11,6 @@ interface TalkListProps {
   talks: TalkWithFreshness[];
   /** When set, only talks of this freshness level are shown. */
   filter?: FreshnessLevel | "scheduled" | null;
-  /** When set, only talks of this category are shown. */
-  categoryFilter?: string | null;
   /** When true, shows an edit button on each card. */
   isAdmin?: boolean;
   /** Called when admin clicks the edit button on a card. */
@@ -34,18 +33,16 @@ const TIERS: FreshnessLevel[] = ["green", "orange", "red"];
 export function TalkList({
   talks,
   filter = null,
-  categoryFilter = null,
   isAdmin = false,
   onEdit,
 }: TalkListProps) {
-  const { texts, language } = usePreferences();
+  const { texts } = usePreferences();
   const [search, setSearch] = useState("");
-  const dateLocale = language === "el" ? el : enUS;
-
-  // Filter talks by category if categoryFilter is set
-  const filteredTalks = categoryFilter
-    ? talks.filter((t) => t.category === categoryFilter)
-    : talks;
+  const getEffectiveLevel = useCallback(
+    (talk: TalkWithFreshness): FreshnessLevel =>
+      talk.isRetired ? "red" : talk.freshnessLevel,
+    [],
+  );
 
   const freshnessConfig: Record<FreshnessLevel, FreshnessDisplayConfig> = {
     green: {
@@ -95,12 +92,15 @@ export function TalkList({
     const isNum = /^\d+$/.test(q);
     const numQ = isNum ? Number(q) : NaN;
 
-    const matches = filteredTalks.filter((t) => {
+    const matches = talks.filter((t) => {
+      const effectiveLevel = getEffectiveLevel(t);
+
       // Freshness filter
       if (filter === "scheduled") {
-        if (!t.isScheduledForFuture) return false;
+        if (!t.isScheduledForFuture || t.isRetired) return false;
       } else if (filter !== null) {
-        if (t.freshnessLevel !== filter || t.isScheduledForFuture) return false;
+        if (effectiveLevel !== filter) return false;
+        if (!t.isRetired && t.isScheduledForFuture) return false;
       }
       // Text / number search
       if (!q) return true;
@@ -129,11 +129,11 @@ export function TalkList({
 
     const groups: { level: FreshnessLevel; items: TalkWithFreshness[] }[] = [];
     for (const level of TIERS) {
-      const items = matches.filter((t) => t.freshnessLevel === level);
+      const items = matches.filter((t) => getEffectiveLevel(t) === level);
       if (items.length > 0) groups.push({ level, items });
     }
     return { flat: null, groups, total: matches.length };
-  }, [filteredTalks, filter, search]);
+  }, [filter, getEffectiveLevel, search, talks]);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -296,10 +296,19 @@ const TalkCard = memo(function TalkCard({
         locale: dateLocale,
       })
     : null;
+  const formattedRetirementDate = talk.retirementEffectiveDate
+    ? format(parseISO(talk.retirementEffectiveDate), "d MMM yyyy", {
+        locale: dateLocale,
+      })
+    : null;
   const nextScheduledPresenter = talk.nextScheduledSpeaker
     ? `${talk.nextScheduledSpeaker.firstName} ${talk.nextScheduledSpeaker.lastName} ${talk.nextScheduledSpeaker.congregation ? `(${talk.nextScheduledSpeaker.congregation})` : ""}`
     : null;
   const hasDetails = talk.isScheduledForFuture || count > 0;
+  const retiredDescription =
+    formattedRetirementDate !== null
+      ? formatText(texts.talks.retiredBlocked, { date: formattedRetirementDate })
+      : texts.talks.freshness.redDescription;
 
   // Override config for future scheduled talks
   const baseCfg: FreshnessDisplayConfig = {
@@ -335,10 +344,21 @@ const TalkCard = memo(function TalkCard({
       title: "text-red-400 dark:text-red-500",
       sectionBorder: "border-red-200 dark:border-red-800/40",
     },
-  }[talk.freshnessLevel];
+  }[talk.isRetired ? "red" : talk.freshnessLevel];
 
   // Override for future scheduled talks
-  const cfg: FreshnessDisplayConfig = talk.isScheduledForFuture
+  const cfg: FreshnessDisplayConfig = talk.isRetired
+    ? {
+        label: texts.talks.retiredLabel,
+        shortLabel: texts.talks.retiredShort,
+        description: retiredDescription,
+        bar: "bg-red-500",
+        dot: "bg-red-500",
+        badge: "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+        title: "text-red-500 dark:text-red-400",
+        sectionBorder: "border-red-200 dark:border-red-800/40",
+      }
+    : talk.isScheduledForFuture
     ? {
         label: texts.talks.scheduledLabel || "Scheduled",
         shortLabel: texts.talks.scheduledShort || "Scheduled",
@@ -360,7 +380,9 @@ const TalkCard = memo(function TalkCard({
   return (
     <div
       className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:shadow-md dark:bg-gray-900 ${
-        talk.isScheduledForFuture || talk.freshnessLevel === "red"
+        talk.isRetired ||
+        talk.isScheduledForFuture ||
+        talk.freshnessLevel === "red"
           ? "border-red-200/60 dark:border-red-800/40"
           : talk.freshnessLevel === "orange"
             ? "border-amber-200/60 dark:border-amber-800/40"
@@ -418,18 +440,19 @@ const TalkCard = memo(function TalkCard({
           </span>
         </div>
 
-        {/* Title and Category */}
+        {/* Title */}
         <h3 className={`text-sm font-semibold leading-snug ${cfg.title}`}>
           {talk.title}
         </h3>
-        {talk.category && (
-          <div className="text-xs text-gray-400 mt-1">{talk.category}</div>
-        )}
 
         {/* Footer: last presented + expand hint */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-400 dark:text-gray-500">
-            {talk.isScheduledForFuture ? (
+            {talk.isRetired && formattedRetirementDate ? (
+              formatText(texts.talks.retiredAfter, {
+                date: formattedRetirementDate,
+              })
+            ) : talk.isScheduledForFuture ? (
               texts.talks.notAvailable
             ) : count === 0 ? (
               texts.talks.neverPresented
