@@ -296,6 +296,10 @@ const TalkCard = memo(function TalkCard({
         locale: dateLocale,
       })
     : null;
+  const nextScheduledPresenter = talk.nextScheduledSpeaker
+    ? `${talk.nextScheduledSpeaker.firstName} ${talk.nextScheduledSpeaker.lastName} ${talk.nextScheduledSpeaker.congregation ? `(${talk.nextScheduledSpeaker.congregation})` : ""}`
+    : null;
+  const hasDetails = talk.isScheduledForFuture || count > 0;
 
   // Override config for future scheduled talks
   const baseCfg: FreshnessDisplayConfig = {
@@ -395,9 +399,9 @@ const TalkCard = memo(function TalkCard({
 
       <button
         type="button"
-        onClick={() => count > 0 && setOpen((o) => !o)}
+        onClick={() => hasDetails && setOpen((o) => !o)}
         className={`flex w-full flex-col gap-3 p-4 pl-5 text-left ${
-          count > 0 ? "cursor-pointer" : "cursor-default"
+          hasDetails ? "cursor-pointer" : "cursor-default"
         }`}
       >
         {/* Top row: Talk number + freshness badge */}
@@ -425,20 +429,32 @@ const TalkCard = memo(function TalkCard({
         {/* Footer: last presented + expand hint */}
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-400 dark:text-gray-500">
-            {talk.isScheduledForFuture
-              ? `${texts.talks.notAvailable} · ${texts.talks.scheduledFor} ${formattedNextScheduledDate}`
-              : count === 0
-                ? texts.talks.neverPresented
-                : monthsLabel
-                  ? `${texts.talks.lastPresented} ${formattedLastPresentedDate} (${monthsLabel})`
-                  : `${texts.talks.lastPresented} ${formattedLastPresentedDate}`}
+            {talk.isScheduledForFuture ? (
+              texts.talks.notAvailable
+            ) : count === 0 ? (
+              texts.talks.neverPresented
+            ) : monthsLabel ? (
+              `${texts.talks.lastPresented} ${formattedLastPresentedDate} (${monthsLabel})`
+            ) : (
+              `${texts.talks.lastPresented} ${formattedLastPresentedDate}`
+            )}
           </span>
-          {count > 0 && (
+          {hasDetails && (
             <span className="flex items-center gap-1 text-gray-400 transition-colors group-hover:text-blue-500 dark:text-gray-500 dark:group-hover:text-blue-400">
-              {count}{" "}
-              {count !== 1
-                ? texts.talks.presentations
-                : texts.talks.presentation}
+              {talk.isScheduledForFuture && (
+                <>
+                  {texts.talks.scheduledLabel}
+                  {count > 0 && " · "}
+                </>
+              )}
+              {count > 0 && (
+                <>
+                  {count}{" "}
+                  {count !== 1
+                    ? texts.talks.presentations
+                    : texts.talks.presentation}
+                </>
+              )}
               <svg
                 className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
                 fill="none"
@@ -458,9 +474,20 @@ const TalkCard = memo(function TalkCard({
       </button>
 
       {/* Expandable presentation history */}
-      {open && count > 0 && (
+      {open && hasDetails && (
         <div className="border-t border-gray-100 bg-gray-50/50 px-4 py-3 pl-5 dark:border-gray-800 dark:bg-gray-800/30">
           <div className="space-y-2">
+            {talk.isScheduledForFuture && (
+              <div className="flex items-center gap-3 text-xs text-red-600 dark:text-red-400">
+                <span className="shrink-0 font-mono text-[11px]">
+                  {formattedNextScheduledDate}
+                </span>
+                <span className="h-px flex-1 bg-red-200 dark:bg-red-800/50" />
+                <span className="truncate text-right">
+                  {nextScheduledPresenter ?? "—"}
+                </span>
+              </div>
+            )}
             {talk.presentations.map((p, i) => (
               <div
                 key={i}

@@ -1,0 +1,1 @@
+Respond with functional code only. Omit conversational intros, explanations, and summaries unless explicitly requested.
