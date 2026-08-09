@@ -153,9 +153,8 @@ function HomePage() {
         settingsInitializedRef.current = true;
       }
     }
-
     setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLoading(false);
   }, [selectedYear, isAdmin, authLoading, hasRequestedYear]);
 
   useEffect(() => {
@@ -453,9 +452,28 @@ function HomePage() {
 
   const handleInlineSave = async (skipRedCheck = false) => {
     if (!inlineId) return;
-    if (!skipRedCheck && selectedTalkId) {
+    const selectedEntry = entries.find((entry) => entry.id === inlineId);
+    if (!selectedEntry) return;
+    if (selectedTalkId) {
       const selTalk = freshTalks.find((t) => t.id === selectedTalkId);
-      if (selTalk?.freshnessLevel === "red") {
+      if (
+        selTalk?.isRetired &&
+        selTalk.retirementEffectiveDate &&
+        selectedEntry.date >= selTalk.retirementEffectiveDate
+      ) {
+        toast(
+          "error",
+          formatText(texts.talks.retiredSaveError, {
+            id: selTalk.id,
+            date: format(parseISO(selTalk.retirementEffectiveDate), "d MMM yyyy", {
+              locale: dateLocale,
+            }),
+          }),
+        );
+        return;
+      }
+
+      if (!skipRedCheck && selTalk?.freshnessLevel === "red" && !selTalk.isRetired) {
         setPendingRedOverride({
           context: "inline",
           talkId: selTalk.id,
@@ -879,6 +897,11 @@ function HomePage() {
                       talkQuery={talkQuery}
                       setTalkQuery={setTalkQuery}
                       selectedTalkId={selectedTalkId}
+                      selectedTalk={
+                        selectedTalkId
+                          ? freshTalks.find((t) => t.id === selectedTalkId) ?? null
+                          : null
+                      }
                       setSelectedTalkId={setSelectedTalkId}
                       customTalkTitle={customTalkTitle}
                       setCustomTalkTitle={setCustomTalkTitle}

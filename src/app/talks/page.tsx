@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { format, parseISO } from "date-fns";
+import { el, enUS } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { usePreferences } from "@/hooks/usePreferences";
 import {
@@ -10,6 +12,7 @@ import {
   getScheduleEntries,
   getSpeakers,
 } from "@/lib/firestore";
+import { TALK_RETIREMENT_NOTICES } from "@/lib/talkRetirements";
 import { computeFreshness } from "@/lib/freshness";
 import type { Talk, TalkWithFreshness, FreshnessLevel } from "@/types";
 import { Spinner } from "@/components/ui/Spinner";
@@ -20,7 +23,8 @@ type TalkFilter = FreshnessLevel | "scheduled" | null;
 
 export default function TalksPage() {
   const { isAdmin, loading: authLoading } = useAuth();
-  const { texts } = usePreferences();
+  const { texts, language } = usePreferences();
+  const dateLocale = language === "el" ? el : enUS;
 
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +37,6 @@ export default function TalksPage() {
   const [adding, setAdding] = useState(false);
   const [newIdInput, setNewIdInput] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("");
   const [newPresentedViaZoom, setNewPresentedViaZoom] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -42,7 +45,6 @@ export default function TalksPage() {
   /* ---- public state ---- */
   const [freshTalks, setFreshTalks] = useState<TalkWithFreshness[]>([]);
   const [filter, setFilter] = useState<TalkFilter>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
   /* ---- load ---- */
@@ -60,14 +62,26 @@ export default function TalksPage() {
   }, [authLoading]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let cancelled = false;
 
-  /* ---- admin: categories ---- */
-  const adminCategories = useMemo(
-    () => Array.from(new Set(talks.map((t) => t.category).filter(Boolean))),
-    [talks],
-  );
+    void (async () => {
+      if (authLoading) return;
+      setLoading(true);
+      const [rawTalks, schedule, speakers] = await Promise.all([
+        getTalks(),
+        getScheduleEntries(),
+        getSpeakers(),
+      ]);
+      if (cancelled) return;
+      setTalks(rawTalks);
+      setFreshTalks(computeFreshness(rawTalks, schedule, speakers));
+      setLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading]);
 
   /* ---- admin: edit ---- */
   const openEdit = (t: TalkWithFreshness) => {
@@ -169,7 +183,7 @@ export default function TalksPage() {
     await saveTalk({
       id: resolvedId,
       title: trimmedTitle,
-      category: newCategory.trim(),
+      category: "",
       presentedViaZoom: newPresentedViaZoom,
     });
     toast("success", `Η ομιλία #${resolvedId} προστέθηκε.`);
@@ -202,9 +216,6 @@ export default function TalksPage() {
 
   /* ---- public: derived data ---- */
   const regularTalks = freshTalks.filter((t) => t.id < 900 || t.id > 999);
-  const publicCategories = Array.from(
-    new Set(regularTalks.map((t) => t.category)),
-  ).filter(Boolean);
   const greenCount = regularTalks.filter(
     (t) => t.freshnessLevel === "green" && !t.isScheduledForFuture,
   ).length;
@@ -212,10 +223,12 @@ export default function TalksPage() {
     (t) => t.freshnessLevel === "orange" && !t.isScheduledForFuture,
   ).length;
   const redCount = regularTalks.filter(
-    (t) => t.freshnessLevel === "red" && !t.isScheduledForFuture,
+    (t) =>
+      (t.isRetired || t.freshnessLevel === "red") &&
+      (!t.isScheduledForFuture || t.isRetired),
   ).length;
   const scheduledCount = regularTalks.filter(
-    (t) => t.isScheduledForFuture,
+    (t) => t.isScheduledForFuture && !t.isRetired,
   ).length;
   const activeFilterLabel =
     filter === "green"
@@ -223,7 +236,7 @@ export default function TalksPage() {
       : filter === "orange"
         ? texts.talks.freshness.orangeLabel
         : filter === "red"
-          ? texts.talks.freshness.redLabel
+          ? texts.talks.retiredLabel
           : filter === "scheduled"
             ? texts.talks.scheduledLabel
             : texts.talks.allTalks;
@@ -269,33 +282,6 @@ export default function TalksPage() {
       </div>
     );
   }
-
-  const publicCategoryDropdown = (
-    <select
-      value={categoryFilter || ""}
-      onChange={(e) => setCategoryFilter(e.target.value || null)}
-      className="ml-2 rounded-full px-3 py-1 text-xs font-semibold bg-blue-400/20 text-blue-900 border border-blue-400/30 shadow-sm backdrop-blur transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 hover:bg-blue-400/30 hover:border-blue-400/50"
-      style={{
-        minHeight: "28px",
-        minWidth: "120px",
-        appearance: "none",
-        boxShadow: "0 1px 4px 0 rgb(30 64 175 / 0.08)",
-      }}
-    >
-      <option value="" className="bg-white text-blue-900">
-        {texts.talks.allCategories || "All categories"}
-      </option>
-      {publicCategories.map((category) => (
-        <option
-          key={category}
-          value={category}
-          className="bg-white text-blue-900 font-semibold"
-        >
-          {category}
-        </option>
-      ))}
-    </select>
-  );
 
   return (
     <div className="space-y-6">
@@ -371,7 +357,7 @@ export default function TalksPage() {
           )}
           {pillBtn(
             "red",
-            texts.talks.tooRecent,
+            texts.talks.retiredLabel,
             redCount,
             "bg-red-400",
             "bg-red-400/20 px-2 py-0.5",
@@ -385,12 +371,6 @@ export default function TalksPage() {
             "bg-purple-400/20 px-2 py-0.5",
             "bg-purple-400/40 px-2 py-0.5",
           )}
-          {publicCategories.length > 0 && (
-            <span className="text-xs text-blue-100 ml-2">
-              {texts.talks.filterByCategory}
-            </span>
-          )}
-          {publicCategories.length > 0 && publicCategoryDropdown}
         </div>
 
         <div className="relative mt-2 flex flex-wrap items-center gap-1 text-xs">
@@ -399,11 +379,6 @@ export default function TalksPage() {
             <span className="font-semibold text-white">
               {activeFilterLabel}
             </span>
-            {categoryFilter && (
-              <span className="ml-2 text-xs text-blue-200">
-                · {categoryFilter}
-              </span>
-            )}
           </p>
         </div>
 
@@ -435,6 +410,39 @@ export default function TalksPage() {
         )}
       </div>
 
+      {TALK_RETIREMENT_NOTICES.length > 0 && (
+        <div className="rounded-2xl border border-red-200 bg-red-50/80 p-4 shadow-sm dark:border-red-900/40 dark:bg-red-950/20">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-900/40 dark:text-red-300">
+              {texts.talks.announcementLabel}
+            </span>
+          </div>
+          <div className="mt-3 space-y-3 text-sm text-red-900 dark:text-red-100">
+            {TALK_RETIREMENT_NOTICES.map((notice) => {
+              const formattedDate = format(
+                parseISO(notice.effectiveDate),
+                "d MMMM yyyy",
+                { locale: dateLocale },
+              );
+
+              return (
+                <div
+                  key={notice.id}
+                  className="rounded-xl border border-red-200/80 bg-white/70 p-3 dark:border-red-900/30 dark:bg-red-950/10"
+                >
+                  <p className="font-medium">
+                    {notice.summary[language]} {formattedDate}:
+                  </p>
+                  <p className="mt-2 break-words font-mono text-xs sm:text-sm">
+                    {notice.talkIds.join(", ")}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Admin: add new talk form */}
       {isAdmin && adding && (
         <div className={editRowCls}>
@@ -450,7 +458,7 @@ export default function TalksPage() {
             </button>
           </div>
           <div
-            className="grid grid-cols-[92px_minmax(0,1fr)_minmax(0,1fr)] gap-2"
+            className="grid grid-cols-[92px_minmax(0,1fr)] gap-2"
             onKeyDown={handleAddKey}
           >
             <div>
@@ -465,17 +473,6 @@ export default function TalksPage() {
                 min={1}
                 placeholder="Αυτόματο"
                 title="Προαιρετικό. Αφήστε κενό για ειδικές καταχωρήσεις."
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                Κατηγορία
-              </label>
-              <input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Κατηγορία ομιλίας"
-                className={inputCls}
               />
             </div>
             <div>
@@ -510,7 +507,6 @@ export default function TalksPage() {
       <TalkList
         talks={regularTalks}
         filter={filter}
-        categoryFilter={categoryFilter}
         isAdmin={isAdmin}
         onEdit={openEdit}
       />
@@ -561,23 +557,6 @@ export default function TalksPage() {
                   placeholder="Τίτλος ομιλίας..."
                   className={inputCls}
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                  Κατηγορία
-                </label>
-                <select
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="">Επιλέξτε κατηγορία...</option>
-                  {adminCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between">

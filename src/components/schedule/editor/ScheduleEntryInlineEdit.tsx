@@ -3,6 +3,8 @@
 import { format, parseISO } from "date-fns";
 import type { Locale } from "date-fns";
 import type { Speaker, TalkWithFreshness, ScheduleEntry } from "@/types";
+import { usePreferences } from "@/hooks/usePreferences";
+import { formatText } from "@/lib/localization";
 
 export interface InlineEditFormProps {
   entry: ScheduleEntry;
@@ -42,6 +44,7 @@ export interface InlineEditFormProps {
   talkQuery: string;
   setTalkQuery: (q: string) => void;
   selectedTalkId: number | null;
+  selectedTalk: TalkWithFreshness | null;
   setSelectedTalkId: (id: number | null) => void;
   customTalkTitle: string;
   setCustomTalkTitle: (v: string) => void;
@@ -102,6 +105,7 @@ export function ScheduleEntryInlineEdit({
   talkQuery,
   setTalkQuery,
   selectedTalkId,
+  selectedTalk,
   setSelectedTalkId,
   customTalkTitle,
   setCustomTalkTitle,
@@ -123,6 +127,31 @@ export function ScheduleEntryInlineEdit({
   zoomLabel,
   physicalLabel,
 }: InlineEditFormProps) {
+  const { texts } = usePreferences();
+  const getRetirementLabel = (talk: TalkWithFreshness) => {
+    if (!talk.retirementEffectiveDate) {
+      return null;
+    }
+
+    return formatText(texts.talks.retiredAfter, {
+      date: format(parseISO(talk.retirementEffectiveDate), "d MMM yyyy", {
+        locale: dateLocale,
+      }),
+    });
+  };
+
+  const getRetirementBlockedLabel = (talk: TalkWithFreshness) => {
+    if (!talk.retirementEffectiveDate || entry.date < talk.retirementEffectiveDate) {
+      return null;
+    }
+
+    return formatText(texts.talks.retiredBlocked, {
+      date: format(parseISO(talk.retirementEffectiveDate), "d MMM yyyy", {
+        locale: dateLocale,
+      }),
+    });
+  };
+
   return (
     <div className="rounded-xl border-2 border-blue-400 bg-blue-50/40 px-4 py-3 dark:border-blue-500 dark:bg-blue-950/30">
       <div className="space-y-3">
@@ -462,22 +491,52 @@ export function ScheduleEntryInlineEdit({
                 ref={talkDropdownRef}
                 className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
               >
-                {talkSuggestions.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => onSelectTalk(t)}
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-blue-50 dark:hover:bg-blue-900/30 ${selectedTalkId === t.id ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
-                  >
-                    <span>
-                      <span className="mr-1.5">
-                        {freshnessIcon(t.freshnessLevel)}
+                {talkSuggestions.map((t) => {
+                  const retirementLabel = getRetirementLabel(t);
+                  const retirementBlockedLabel = getRetirementBlockedLabel(t);
+                  const isDisabled = retirementBlockedLabel !== null;
+
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        if (!isDisabled) {
+                          onSelectTalk(t);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      className={`flex w-full items-start justify-between gap-3 px-3 py-2 text-left text-sm transition ${
+                        isDisabled
+                          ? "cursor-not-allowed bg-red-50/70 text-red-700 dark:bg-red-950/30 dark:text-red-300"
+                          : "hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      } ${selectedTalkId === t.id ? "bg-blue-50 dark:bg-blue-900/30" : ""}`}
+                    >
+                      <span className="min-w-0">
+                        <span className="mr-1.5">
+                          {freshnessIcon(t.freshnessLevel)}
+                        </span>
+                        <span className="font-medium text-gray-500">#{t.id}</span>{" "}
+                        — {t.title}
+                        {retirementLabel && (
+                          <span className="mt-1 block text-xs text-red-500 dark:text-red-400">
+                            {retirementLabel}
+                          </span>
+                        )}
+                        {retirementBlockedLabel && (
+                          <span className="mt-1 block text-xs font-medium text-red-600 dark:text-red-300">
+                            {retirementBlockedLabel}
+                          </span>
+                        )}
                       </span>
-                      <span className="font-medium text-gray-500">#{t.id}</span>{" "}
-                      — {t.title}
-                    </span>
-                  </button>
-                ))}
+                      {t.isRetired && (
+                        <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                          {texts.talks.retiredShort}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
                 {talkSuggestions.length === 0 && talkQuery.trim() && (
                   <div className="px-3 py-2 text-sm text-gray-400">
                     Δεν βρέθηκαν αντίστοιχες ομιλίες.
@@ -513,9 +572,22 @@ export function ScheduleEntryInlineEdit({
             )}
           </div>
           {selectedTalkId && (
-            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-              Επιλέχθηκε κανονική ομιλία
-            </p>
+            <div className="mt-1 space-y-1">
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                Επιλέχθηκε κανονική ομιλία
+              </p>
+              {selectedTalk?.isRetired && getRetirementLabel(selectedTalk) && (
+                <p className="text-xs text-red-500 dark:text-red-400">
+                  {getRetirementLabel(selectedTalk)}
+                </p>
+              )}
+              {selectedTalk?.isRetired &&
+                getRetirementBlockedLabel(selectedTalk) && (
+                  <p className="text-xs font-medium text-red-600 dark:text-red-300">
+                    {getRetirementBlockedLabel(selectedTalk)}
+                  </p>
+                )}
+            </div>
           )}
           {!selectedTalkId && customTalkTitle && (
             <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
